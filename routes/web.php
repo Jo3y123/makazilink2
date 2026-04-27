@@ -20,6 +20,7 @@ use App\Http\Controllers\MpesaController;
 use App\Http\Controllers\PropertyReportController;
 use App\Http\Controllers\MessageController;
 use App\Http\Controllers\ProfitLossController;
+use App\Http\Controllers\SubscriptionController;
 
 // Auth routes (guests only)
 Route::middleware('guest')->group(function () {
@@ -35,6 +36,17 @@ Route::get('/', fn () => redirect()->route('login'));
 
 // Staff Dashboard
 Route::middleware(['auth', 'role:admin,agent,accountant,caretaker'])->group(function () {
+
+    // Subscription expired page
+Route::get('/subscription/expired', [SubscriptionController::class, 'expired'])->name('subscription.expired');
+
+    // Subscription admin panel
+    Route::middleware('role:admin')->prefix('subscription')->name('subscription.')->group(function () {
+        Route::get('/',           [SubscriptionController::class, 'index'])->name('index');
+        Route::post('/',          [SubscriptionController::class, 'store'])->name('store');
+        Route::post('/activate',  [SubscriptionController::class, 'activate'])->name('activate');
+        Route::post('/suspend',   [SubscriptionController::class, 'suspend'])->name('suspend');
+    });
 
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 

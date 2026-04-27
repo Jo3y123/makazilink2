@@ -665,7 +665,7 @@
         @hasrole(['admin'])
         <div class="nav-divider"></div>
         {{-- Settings Group --}}
-        <button class="nav-section-btn {{ request()->routeIs('settings.index') ? 'active-group' : '' }}"
+        <button class="nav-section-btn {{ request()->routeIs('settings.*') || request()->routeIs('subscription.*') ? 'active-group' : '' }}"
                 id="btn-group-settings"
                 onclick="toggleGroup('group-settings', 'btn-group-settings')">
             <span class="section-left">
@@ -678,7 +678,12 @@
                class="nav-link {{ request()->routeIs('settings.index') ? 'active' : '' }}">
                 <i class="bi bi-sliders"></i> System Settings
             </a>
+            <a href="{{ route('subscription.index') }}"
+               class="nav-link {{ request()->routeIs('subscription.*') ? 'active' : '' }}">
+                <i class="bi bi-credit-card"></i> Subscription
+            </a>
         </div>
+        
         @endhasrole
  
     </div>
