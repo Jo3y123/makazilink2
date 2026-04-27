@@ -10,8 +10,9 @@ class Property extends Model
     use HasFactory;
 
     protected $fillable = [
-        'name', 'address', 'county', 'town', 'type',
-        'owner_id', 'agent_id', 'description', 'is_active',
+    'name', 'address', 'county', 'town', 'type',
+    'owner_id', 'agent_id', 'description', 'is_active',
+    'image_path',
     ];
 
     protected function casts(): array

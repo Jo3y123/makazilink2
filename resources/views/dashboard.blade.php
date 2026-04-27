@@ -14,6 +14,12 @@
         ->whereNotNull('end_date')
         ->whereDate('end_date', '<=', now()->addDays($alertDays))
         ->get();
+ 
+    $arrearsInvoices = \App\Models\Invoice::with('tenant.user', 'unit.property')
+    ->whereIn('status', ['draft', 'sent', 'overdue', 'partial'])
+    ->where('balance', '>', 0)
+    ->orderByDesc('balance')
+    ->get();
 @endphp
  
 @if($expiringLeases->count() > 0)
@@ -40,7 +46,8 @@
 </div>
 @endif
  
-<div class="d-flex align-items-center justify-content-between mb-4">
+{{-- Header with date filter --}}
+<div class="d-flex align-items-start justify-content-between mb-4 flex-wrap gap-3">
     <div>
         <h2 class="mb-1" style="font-size:1.15rem;font-weight:700;color:#1a1a2e">
             Good {{ now()->hour < 12 ? 'morning' : (now()->hour < 17 ? 'afternoon' : 'evening') }},
@@ -50,6 +57,29 @@
             {{ now()->format('l, d F Y') }} &mdash; Here is your property overview
         </p>
     </div>
+ 
+    @hasrole(['admin', 'accountant'])
+    <form method="GET" action="{{ route('dashboard') }}"
+          class="d-flex align-items-center gap-2 flex-wrap">
+        <div class="d-flex align-items-center gap-2"
+             style="background:#fff;border:1px solid #e9ecef;border-radius:10px;padding:8px 14px">
+            <i class="bi bi-calendar3" style="color:#6c757d;font-size:.85rem"></i>
+            <input type="date" name="date_from" value="{{ $dateFrom }}"
+                   style="font-size:.82rem;font-family:'Plus Jakarta Sans',sans-serif;outline:none;width:120px;color:#1a1a2e;border:none;background:transparent">
+            <span style="color:#6c757d;font-size:.82rem">to</span>
+            <input type="date" name="date_to" value="{{ $dateTo }}"
+                   style="font-size:.82rem;font-family:'Plus Jakarta Sans',sans-serif;outline:none;width:120px;color:#1a1a2e;border:none;background:transparent">
+        </div>
+        <button type="submit" class="btn btn-sm"
+                style="background:#1a7a4a;color:#fff;border-radius:8px;padding:8px 16px;font-size:.82rem;font-weight:600">
+            <i class="bi bi-funnel me-1"></i>Filter
+        </button>
+        <a href="{{ route('dashboard') }}" class="btn btn-sm btn-outline-secondary"
+           style="border-radius:8px;padding:8px 12px;font-size:.82rem">
+            Reset
+        </a>
+    </form>
+    @endhasrole
 </div>
  
 @if(auth()->user()->hasRole(['admin', 'agent', 'accountant', 'caretaker']))
@@ -118,7 +148,12 @@
         <div class="stat-card">
             <div class="d-flex align-items-start justify-content-between">
                 <div>
-                    <div class="stat-label">This Month</div>
+                    <div class="stat-label">
+                        Revenue
+                        <span style="font-size:.65rem;color:#9ca3af;font-weight:400;display:block">
+                            {{ \Carbon\Carbon::parse($dateFrom)->format('d M') }} — {{ \Carbon\Carbon::parse($dateTo)->format('d M Y') }}
+                        </span>
+                    </div>
                     <div class="stat-value" style="font-size:1.3rem">
                         {{ $currency }} {{ number_format($stats['monthly_revenue']) }}
                     </div>
@@ -130,15 +165,20 @@
         </div>
     </div>
  
-    <div class="col-6 col-md-3">
-        <div class="stat-card">
+    <div class="col-6 col-md-3" style="cursor:pointer" onclick="document.getElementById('arrearsModal').style.display='flex'">
+        <div class="stat-card" style="transition:box-shadow .2s"
+             onmouseover="this.style.boxShadow='0 4px 20px rgba(185,28,28,.15)'"
+             onmouseout="this.style.boxShadow=''">
             <div class="d-flex align-items-start justify-content-between">
                 <div>
-                    <div class="stat-label">Pending</div>
+                    <div class="stat-label">
+                        Arrears
+                        <span style="font-size:.65rem;color:#1a7a4a;font-weight:600"> ↗ click</span>
+                    </div>
                     <div class="stat-value">{{ $stats['pending_payments'] }}</div>
                 </div>
                 <div class="stat-icon" style="background:#fee2e2;color:#b91c1c">
-                    <i class="bi bi-clock-history"></i>
+                    <i class="bi bi-exclamation-circle"></i>
                 </div>
             </div>
         </div>
@@ -336,6 +376,76 @@
                     </div>
                 @endif
             </div>
+        </div>
+    </div>
+</div>
+@endhasrole
+ 
+{{-- Arrears Modal --}}
+@hasrole(['admin', 'accountant'])
+<div id="arrearsModal"
+     style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:9000;align-items:center;justify-content:center"
+     onclick="if(event.target===this) this.style.display='none'">
+    <div style="background:#fff;border-radius:16px;width:90%;max-width:640px;max-height:80vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.2)">
+        <div style="padding:20px 24px;border-bottom:1px solid #f0f0f0;display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
+            <div>
+                <div style="font-size:1rem;font-weight:700;color:#1a1a2e">
+                    <i class="bi bi-exclamation-circle me-2" style="color:#b91c1c"></i>Arrears
+                </div>
+                <div style="font-size:.78rem;color:#6c757d;margin-top:2px">
+                    {{ $arrearsInvoices->count() }} unpaid invoice(s) —
+                    Total: {{ $currency }} {{ number_format($arrearsInvoices->sum('balance')) }}
+                </div>
+            </div>
+            <button onclick="document.getElementById('arrearsModal').style.display='none'"
+                    style="background:none;border:none;font-size:1.2rem;color:#6c757d;cursor:pointer;padding:0">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+        <div style="overflow-y:auto;flex:1">
+            @if($arrearsInvoices->isEmpty())
+                <div style="text-align:center;padding:40px;color:#9ca3af;font-size:.85rem">
+                    <i class="bi bi-check-circle fs-3 d-block mb-2" style="color:#15803d"></i>
+                    No arrears. All tenants are up to date!
+                </div>
+            @else
+                @foreach($arrearsInvoices as $invoice)
+                <div style="padding:14px 24px;border-bottom:1px solid #f8fafc;display:flex;align-items:center;justify-content:space-between;gap:12px">
+                    <div style="flex:1;min-width:0">
+                        <div style="font-size:.85rem;font-weight:700;color:#1a1a2e">
+                            {{ $invoice->tenant->user->name }}
+                        </div>
+                        <div style="font-size:.75rem;color:#6c757d;margin-top:2px">
+                            {{ $invoice->invoice_number }} —
+                            Unit {{ $invoice->unit->unit_number }},
+                            {{ $invoice->unit->property->name }} —
+                            Due {{ $invoice->due_date->format('d M Y') }}
+                        </div>
+                    </div>
+                    <div style="text-align:right;flex-shrink:0">
+                        <div style="font-size:.9rem;font-weight:700;color:#b91c1c">
+                            {{ $currency }} {{ number_format($invoice->balance) }}
+                        </div>
+                        @if($invoice->status === 'overdue')
+                            <span style="background:#fee2e2;color:#b91c1c;padding:2px 8px;border-radius:20px;font-size:.68rem;font-weight:600">Overdue</span>
+                        @else
+                            <span style="background:#dbeafe;color:#1e40af;padding:2px 8px;border-radius:20px;font-size:.68rem;font-weight:600">Partial</span>
+                        @endif
+                    </div>
+                </div>
+                @endforeach
+            @endif
+        </div>
+        <div style="padding:16px 24px;border-top:1px solid #f0f0f0;flex-shrink:0;display:flex;gap:8px;justify-content:flex-end">
+            <a href="{{ route('invoices.index') }}" class="btn btn-sm"
+               style="background:#1a7a4a;color:#fff;border-radius:8px;font-size:.82rem;padding:7px 16px">
+                View All Invoices
+            </a>
+            <button onclick="document.getElementById('arrearsModal').style.display='none'"
+                    class="btn btn-sm btn-outline-secondary"
+                    style="border-radius:8px;font-size:.82rem;padding:7px 16px">
+                Close
+            </button>
         </div>
     </div>
 </div>

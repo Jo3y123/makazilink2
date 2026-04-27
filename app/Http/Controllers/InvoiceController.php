@@ -149,4 +149,17 @@ class InvoiceController extends Controller
         return redirect()->route('invoices.index')
             ->with('success', 'Invoice deleted.');
     }
+
+    public function massDestroy(Request $request)
+    {
+        $request->validate([
+            'ids'   => 'required|array|min:1',
+            'ids.*' => 'exists:invoices,id',
+        ]);
+
+        $count = Invoice::whereIn('id', $request->ids)->delete();
+
+        return redirect()->route('invoices.index')
+            ->with('success', "{$count} invoice(s) deleted successfully.");
+    }
 }

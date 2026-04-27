@@ -18,6 +18,8 @@ use App\Http\Controllers\ChatbotController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\MpesaController;
 use App\Http\Controllers\PropertyReportController;
+use App\Http\Controllers\MessageController;
+use App\Http\Controllers\ProfitLossController;
 
 // Auth routes (guests only)
 Route::middleware('guest')->group(function () {
@@ -37,12 +39,14 @@ Route::middleware(['auth', 'role:admin,agent,accountant,caretaker'])->group(func
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     Route::middleware('role:admin,agent')->prefix('properties')->name('properties.')->group(function () {
-        Route::get('/',                   [PropertyController::class, 'index'])->name('index');
-        Route::get('/create',             [PropertyController::class, 'create'])->name('create');
-        Route::post('/',                  [PropertyController::class, 'store'])->name('store');
-        Route::get('/{property}/edit',    [PropertyController::class, 'edit'])->name('edit');
-        Route::put('/{property}',         [PropertyController::class, 'update'])->name('update');
-        Route::delete('/{property}',      [PropertyController::class, 'destroy'])->name('destroy');
+    Route::get('/',                                [PropertyController::class, 'index'])->name('index');
+    Route::get('/create',                          [PropertyController::class, 'create'])->name('create');
+    Route::post('/',                               [PropertyController::class, 'store'])->name('store');
+    Route::get('/{property}/edit',                 [PropertyController::class, 'edit'])->name('edit');
+    Route::put('/{property}',                      [PropertyController::class, 'update'])->name('update');
+    Route::delete('/{property}',                   [PropertyController::class, 'destroy'])->name('destroy');
+    Route::get('/{property}/water',                [PropertyController::class, 'sharedWater'])->name('water');
+    Route::post('/{property}/water',               [PropertyController::class, 'applySharedWater'])->name('water.apply');
     });
 
     Route::middleware('role:admin,agent,caretaker')->prefix('units')->name('units.')->group(function () {
@@ -92,8 +96,8 @@ Route::post('/chatbot', [ChatbotController::class, 'ask'])->middleware('auth')->
     Route::get('/create',            [InvoiceController::class, 'create'])->name('create');
     Route::post('/',                 [InvoiceController::class, 'store'])->name('store');
     Route::post('/bulk-generate',    [InvoiceController::class, 'bulkGenerate'])->name('bulk');
+    Route::delete('/mass-destroy',   [InvoiceController::class, 'massDestroy'])->name('mass-destroy');
     Route::get('/{invoice}',         [InvoiceController::class, 'show'])->name('show');
-    Route::get('/{invoice}/pdf',     [InvoiceController::class, 'pdf'])->name('pdf');
     Route::get('/{invoice}/pdf',     [InvoiceController::class, 'pdf'])->name('pdf');
     Route::delete('/{invoice}',      [InvoiceController::class, 'destroy'])->name('destroy');
 });
@@ -114,12 +118,24 @@ Route::post('/chatbot', [ChatbotController::class, 'ask'])->middleware('auth')->
         Route::delete('/{water}', [WaterReadingController::class, 'destroy'])->name('destroy');
     });
 
+    // Messages — Admin and Caretaker
+    Route::middleware('role:admin,caretaker')->prefix('messages')->name('messages.')->group(function () {
+        Route::get('/',                    [MessageController::class, 'index'])->name('index');
+        Route::get('/{tenant}',            [MessageController::class, 'show'])->name('show');
+        Route::post('/{tenant}/reply',     [MessageController::class, 'reply'])->name('reply');
+    });
+
+    // Messages unread count
+    Route::get('/messages/unread', [MessageController::class, 'unreadCount'])->name('messages.unread'); 
+
     Route::middleware('role:admin,accountant')->prefix('reports')->name('reports.')->group(function () {
-    Route::get('/', [ReportController::class, 'index'])->name('index');
-    Route::get('/properties', [PropertyReportController::class, 'index'])->name('properties');
-    Route::get('/properties/{property}', [PropertyReportController::class, 'show'])->name('property.show');
-    Route::get('/properties/{property}/pdf', [PropertyReportController::class, 'pdf'])->name('property.pdf');
-    });;
+        Route::get('/', [ReportController::class, 'index'])->name('index');
+        Route::get('/properties', [PropertyReportController::class, 'index'])->name('properties');
+        Route::get('/properties/{property}', [PropertyReportController::class, 'show'])->name('property.show');
+        Route::get('/properties/{property}/pdf', [PropertyReportController::class, 'pdf'])->name('property.pdf');
+        Route::get('/profit-loss', [ProfitLossController::class, 'index'])->name('profit-loss');
+        Route::get('/profit-loss/pdf', [ProfitLossController::class, 'pdf'])->name('profit-loss.pdf');
+    });
 
     Route::middleware('role:admin')->prefix('settings')->name('settings.')->group(function () {
     Route::get('/',                  [SettingsController::class, 'index'])->name('index');
@@ -146,5 +162,7 @@ Route::post('/mpesa/callback', [MpesaController::class, 'callback'])->name('mpes
 
 // Tenant Portal
 Route::middleware(['auth', 'role:tenant'])->prefix('portal')->name('tenant.')->group(function () {
-    Route::get('/', [TenantPortalController::class, 'index'])->name('portal');
+    Route::get('/',              [TenantPortalController::class, 'index'])->name('portal');
+    Route::get('/messages',      [MessageController::class, 'tenantInbox'])->name('messages');
+    Route::post('/messages',     [MessageController::class, 'tenantSend'])->name('messages.send');
 });

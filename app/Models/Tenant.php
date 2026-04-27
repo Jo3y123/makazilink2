@@ -53,4 +53,9 @@ class Tenant extends Model
     {
         return $this->user->phone ?? '';
     }
+
+    public function messages()
+    {
+    return $this->hasMany(\App\Models\Message::class);
+    }
 }

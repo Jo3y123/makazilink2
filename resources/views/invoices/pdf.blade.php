@@ -11,14 +11,6 @@
             color: #1a1a2e;
             padding: 40px;
         }
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 30px;
-            padding-bottom: 20px;
-            border-bottom: 2px solid #1a7a4a;
-        }
         .brand-name {
             font-size: 20px;
             font-weight: 700;
@@ -35,18 +27,6 @@
             margin-top: 6px;
             line-height: 1.6;
         }
-        .invoice-title {
-            text-align: right;
-        }
-        .invoice-title h1 {
-            font-size: 24px;
-            font-weight: 700;
-            color: #1a7a4a;
-        }
-        .invoice-title .number {
-            font-size: 12px;
-            color: #6c757d;
-        }
         .status-badge {
             display: inline-block;
             padding: 4px 12px;
@@ -60,12 +40,7 @@
         .status-partial { background: #dbeafe; color: #1e40af; }
         .status-overdue { background: #fee2e2; color: #b91c1c; }
         .status-draft   { background: #f1f5f9; color: #64748b; }
-        .details-row {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 24px;
-        }
-        .details-box { width: 48%; }
+        .status-sent    { background: #f3e8ff; color: #7e22ce; }
         .details-label {
             font-size: 9px;
             text-transform: uppercase;
@@ -91,12 +66,12 @@
             font-size: 11px;
             color: #374151;
         }
-        table {
+        table.lines {
             width: 100%;
             border-collapse: collapse;
             margin-bottom: 20px;
         }
-        thead th {
+        table.lines thead th {
             background: #f8fafc;
             padding: 8px 12px;
             text-align: left;
@@ -106,7 +81,7 @@
             color: #6c757d;
             border-bottom: 1px solid #e9ecef;
         }
-        tbody td {
+        table.lines tbody td {
             padding: 10px 12px;
             border-bottom: 1px solid #f0f0f0;
             font-size: 12px;
@@ -128,6 +103,7 @@
             font-weight: 700;
             font-size: 13px;
             border: none;
+            padding: 8px 12px;
         }
         .invoice-notes {
             background: #f8fafc;
@@ -148,7 +124,7 @@
     </style>
 </head>
 <body>
-
+ 
 @php
     $companyName    = \App\Models\Setting::get('company_name', 'MakaziLink v2');
     $companyPhone   = \App\Models\Setting::get('company_phone', '');
@@ -156,10 +132,18 @@
     $companyAddress = \App\Models\Setting::get('company_address', '');
     $currency       = \App\Models\Setting::get('currency', 'KES');
     $invoiceNotes   = \App\Models\Setting::get('invoice_notes', '');
+    $logoPath       = \App\Models\Setting::get('logo_path', '');
 @endphp
-
-    <div class="header">
-        <div>
+ 
+{{-- Header --}}
+<table style="width:100%;margin-bottom:30px;padding-bottom:20px;border-bottom:2px solid #1a7a4a;border-collapse:collapse">
+    <tr>
+        <td style="vertical-align:top;width:60%">
+            @if($logoPath)
+                <img src="{{ public_path('storage/' . $logoPath) }}"
+                     alt="Logo"
+                     style="height:40px;width:auto;margin-bottom:6px;display:block">
+            @endif
             <div class="brand-name">{{ $companyName }}</div>
             <div class="brand-sub">Rental Management System</div>
             <div class="brand-contact">
@@ -167,104 +151,129 @@
                 @if($companyEmail) {{ $companyEmail }}<br> @endif
                 @if($companyAddress) {{ $companyAddress }} @endif
             </div>
-        </div>
-        <div class="invoice-title">
-            <h1>INVOICE</h1>
-            <div class="number">{{ $invoice->invoice_number }}</div>
+        </td>
+        <td style="vertical-align:top;text-align:right;width:40%">
+            <div style="font-size:24px;font-weight:700;color:#1a7a4a">INVOICE</div>
+            <div style="font-size:12px;color:#6c757d;margin-top:4px">{{ $invoice->invoice_number }}</div>
             <div>
                 <span class="status-badge status-{{ $invoice->status }}">
                     {{ strtoupper($invoice->status) }}
                 </span>
             </div>
-        </div>
-    </div>
-
-    <div class="details-row">
-        <div class="details-box">
+        </td>
+    </tr>
+</table>
+ 
+{{-- Billed To --}}
+<table style="width:100%;margin-bottom:16px;border-collapse:collapse">
+    <tr>
+        <td style="vertical-align:top;width:50%">
             <div class="details-label">Billed To</div>
             <div class="details-value">{{ $invoice->tenant->user->name }}</div>
             <div class="details-sub">{{ $invoice->tenant->user->email }}</div>
             <div class="details-sub">{{ $invoice->tenant->user->phone }}</div>
-        </div>
-        <div class="details-box" style="text-align:right">
-            <div class="details-label">Period</div>
+        </td>
+        <td style="vertical-align:top;width:50%">
+            <div class="details-label">Invoice Number</div>
+            <div class="details-value">{{ $invoice->invoice_number }}</div>
+        </td>
+    </tr>
+</table>
+
+{{-- Period and Due Date --}}
+<table style="width:100%;margin-bottom:24px;border-collapse:collapse">
+    <tr>
+        <td style="vertical-align:top;width:50%">
+            <div class="details-label">Billing Period</div>
             <div class="details-value">
                 {{ $invoice->period_start->format('d M Y') }} —
                 {{ $invoice->period_end->format('d M Y') }}
             </div>
-            <div class="details-label" style="margin-top:8px">Due Date</div>
-            <div class="details-value">{{ $invoice->due_date->format('d M Y') }}</div>
-        </div>
-    </div>
-
-    <div class="unit-box">
-        <strong>Property:</strong> {{ $invoice->unit->property->name }} —
-        Unit {{ $invoice->unit->unit_number }},
-        {{ $invoice->unit->property->address }}
-    </div>
-
-    <table>
-        <thead>
-            <tr>
-                <th>Description</th>
-                <th class="text-right">Amount ({{ $currency }})</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td>Rent</td>
-                <td class="text-right">{{ number_format($invoice->rent_amount) }}</td>
-            </tr>
-            @if($invoice->water_amount > 0)
-            <tr>
-                <td>Water</td>
-                <td class="text-right">{{ number_format($invoice->water_amount) }}</td>
-            </tr>
-            @endif
-            @if($invoice->garbage_amount > 0)
-            <tr>
-                <td>Garbage</td>
-                <td class="text-right">{{ number_format($invoice->garbage_amount) }}</td>
-            </tr>
-            @endif
-            @if($invoice->other_amount > 0)
-            <tr>
-                <td>Other</td>
-                <td class="text-right">{{ number_format($invoice->other_amount) }}</td>
-            </tr>
-            @endif
-        </tbody>
-        <tfoot>
-            <tr class="totals-row grand-total">
-                <td>Total</td>
-                <td class="text-right">{{ $currency }} {{ number_format($invoice->total_amount) }}</td>
-            </tr>
-            <tr class="totals-row">
-                <td style="color:#15803d">Amount Paid</td>
-                <td class="text-right" style="color:#15803d">{{ $currency }} {{ number_format($invoice->amount_paid) }}</td>
-            </tr>
-            <tr class="balance-row">
-                <td>Balance Due</td>
-                <td class="text-right">{{ $currency }} {{ number_format($invoice->balance) }}</td>
-            </tr>
-        </tfoot>
-    </table>
-
-    @if($invoiceNotes)
-    <div class="invoice-notes">
-        <strong>Payment Instructions:</strong> {{ $invoiceNotes }}
-    </div>
-    @endif
-
-    @if($invoice->notes)
-    <div style="font-size:11px;color:#374151;margin-bottom:20px">
-        <strong>Notes:</strong> {{ $invoice->notes }}
-    </div>
-    @endif
-
-    <div class="footer">
-        {{ $companyName }} — Generated on {{ now()->format('d M Y, h:i A') }}
-    </div>
-
+        </td>
+        <td style="vertical-align:top;width:50%">
+            <div class="details-label">Due Date</div>
+            <div class="details-value" style="color:#b91c1c">
+                {{ $invoice->due_date->format('d M Y') }}
+            </div>
+        </td>
+    </tr>
+</table>
+ 
+{{-- Unit / Property --}}
+<div class="unit-box">
+    <strong>Property:</strong> {{ $invoice->unit->property->name }} —
+    Unit {{ $invoice->unit->unit_number }},
+    {{ $invoice->unit->property->address }}
+</div>
+ 
+{{-- Line Items --}}
+<table class="lines">
+    <thead>
+        <tr>
+            <th>Description</th>
+            <th class="text-right">Amount ({{ $currency }})</th>
+        </tr>
+    </thead>
+    <tbody>
+        @if($invoice->rent_amount > 0)
+        <tr>
+            <td>Rent</td>
+            <td class="text-right">{{ number_format($invoice->rent_amount) }}</td>
+        </tr>
+        @endif
+        @if($invoice->water_amount > 0)
+        <tr>
+            <td>Water</td>
+            <td class="text-right">{{ number_format($invoice->water_amount) }}</td>
+        </tr>
+        @endif
+        @if($invoice->garbage_amount > 0)
+        <tr>
+            <td>Garbage</td>
+            <td class="text-right">{{ number_format($invoice->garbage_amount) }}</td>
+        </tr>
+        @endif
+        @if($invoice->other_amount > 0)
+        <tr>
+            <td>Other Charges</td>
+            <td class="text-right">{{ number_format($invoice->other_amount) }}</td>
+        </tr>
+        @endif
+    </tbody>
+    <tfoot>
+        <tr class="totals-row grand-total">
+            <td>Total</td>
+            <td class="text-right">{{ $currency }} {{ number_format($invoice->total_amount) }}</td>
+        </tr>
+        <tr class="totals-row">
+            <td style="color:#15803d">Amount Paid</td>
+            <td class="text-right" style="color:#15803d">
+                {{ $currency }} {{ number_format($invoice->amount_paid) }}
+            </td>
+        </tr>
+        <tr class="balance-row">
+            <td>Balance Due</td>
+            <td class="text-right">{{ $currency }} {{ number_format($invoice->balance) }}</td>
+        </tr>
+    </tfoot>
+</table>
+ 
+@if($invoiceNotes)
+<div class="invoice-notes">
+    <strong>Payment Instructions:</strong> {{ $invoiceNotes }}
+</div>
+@endif
+ 
+@if($invoice->notes)
+<div style="font-size:11px;color:#374151;margin-bottom:20px">
+    <strong>Notes:</strong> {{ $invoice->notes }}
+</div>
+@endif
+ 
+<div class="footer">
+    {{ $companyName }} — Generated on {{ now()->format('d M Y, h:i A') }}
+</div>
+ 
 </body>
 </html>
+ 

@@ -10,7 +10,7 @@
     <p class="text-muted mb-0" style="font-size:.82rem">Configure MakaziLink v2 for your business</p>
 </div>
 
-<form action="{{ route('settings.update') }}" method="POST">
+<form action="{{ route('settings.update') }}" method="POST" enctype="multipart/form-data">
     @csrf
 
     <div class="row g-4">
@@ -26,6 +26,38 @@
                         <h3 style="font-size:.95rem;font-weight:700;color:#1a1a2e;margin:0">General</h3>
                     </div>
 
+                    {{-- Logo Upload --}}
+                    <div class="mb-4 p-3" style="background:#f8fafc;border-radius:10px;border:1px solid #e9ecef">
+                        <label class="form-label" style="font-size:.8rem;font-weight:600;color:#374151">
+                            System Logo
+                        </label>
+                        <div class="d-flex align-items-center gap-3 mb-2">
+                            @if($settings['logo_path'])
+                                <img src="{{ asset('storage/' . $settings['logo_path']) }}"
+                                     alt="Logo"
+                                     style="height:48px;width:auto;border-radius:8px;border:1px solid #e9ecef;padding:4px;background:#fff">
+                            @else
+                                <div style="width:48px;height:48px;background:#e8f5ee;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#1a7a4a;font-size:1.2rem">
+                                    <i class="bi bi-buildings"></i>
+                                </div>
+                            @endif
+                            <div>
+                                <div style="font-size:.8rem;font-weight:600;color:#1a1a2e">
+                                    {{ $settings['logo_path'] ? 'Logo uploaded' : 'No logo uploaded' }}
+                                </div>
+                                <div style="font-size:.72rem;color:#6c757d">
+                                    Recommended: PNG or SVG, max 2MB
+                                </div>
+                            </div>
+                        </div>
+                        <input type="file" name="logo" class="form-control"
+                               accept="image/*"
+                               style="font-size:.82rem">
+                        <small class="text-muted" style="font-size:.72rem">
+                            Leave empty to keep current logo. Logo appears in the sidebar and on PDFs.
+                        </small>
+                    </div>
+
                     <div class="mb-3">
                         <label class="form-label" style="font-size:.8rem;font-weight:600;color:#374151">System Name</label>
                         <input type="text" name="system_name" class="form-control"
@@ -34,8 +66,10 @@
 
                     <div class="mb-3">
                         <label class="form-label" style="font-size:.8rem;font-weight:600;color:#374151">Company Name</label>
-                        <input type="text" name="company_name" class="form-control"
-                               value="{{ $settings['company_name'] }}" placeholder="Your company name">
+                        <input type="text" class="form-control"
+                            value="{{ $settings['system_name'] }}" disabled
+                            style="background:#f8fafc;color:#6c757d">
+                        <small class="text-muted" style="font-size:.72rem">This is set automatically from System Name above</small>
                     </div>
 
                     <div class="mb-3">

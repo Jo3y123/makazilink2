@@ -96,4 +96,88 @@ class PropertyReportController extends Controller
 
         return $pdf->download('property-report-' . str_replace(' ', '-', $property->name) . '.pdf');
     }
+
+    public function sharedWater(Property $property)
+    {
+        $property->load('units.activeLease.tenant.user');
+
+        $units = $property->units->filter(fn($u) => $u->status === 'occupied' && $u->activeLease);
+
+        return view('properties.shared-water', compact('property', 'units'));
+    }
+
+    public function applySharedWater(Request $request, Property $property)
+    {
+    $request->validate([
+        'total_water_bill' => 'required|numeric|min:1',
+        'unit_ids'         => 'required|array|min:1',
+        'unit_ids.*'       => 'exists:units,id',
+        'split_method'     => 'required|in:equal,custom',
+        'custom_amounts'   => 'nullable|array',
+    ]);
+
+    $property->load('units.activeLease.tenant');
+
+    $selectedUnits = $property->units->whereIn('id', $request->unit_ids);
+    $totalBill     = (float) $request->total_water_bill;
+    $count         = $selectedUnits->count();
+    $applied       = 0;
+    $created       = 0;
+    $errors        = [];
+
+    foreach ($selectedUnits as $unit) {
+        // Calculate water amount for this unit
+        if ($request->split_method === 'equal') {
+            $waterAmount = round($totalBill / $count, 2);
+        } else {
+            $waterAmount = (float) ($request->custom_amounts[$unit->id] ?? 0);
+        }
+
+        if ($waterAmount <= 0) continue;
+
+        $lease  = $unit->activeLease;
+        $tenant = $lease->tenant;
+
+        // Find existing unpaid invoice
+        $invoice = \App\Models\Invoice::where('tenant_id', $tenant->id)
+            ->whereIn('status', ['draft', 'sent', 'partial', 'overdue'])
+            ->latest()
+            ->first();
+
+        if ($invoice) {
+            // Update existing invoice
+            $invoice->water_amount  += $waterAmount;
+            $invoice->total_amount  += $waterAmount;
+            $invoice->balance       += $waterAmount;
+            $invoice->save();
+            $applied++;
+        } else {
+            // Create new water-only invoice
+            \App\Models\Invoice::create([
+                'invoice_number' => \App\Models\Invoice::generateNumber(),
+                'lease_id'       => $lease->id,
+                'tenant_id'      => $tenant->id,
+                'unit_id'        => $unit->id,
+                'rent_amount'    => 0,
+                'water_amount'   => $waterAmount,
+                'garbage_amount' => 0,
+                'other_amount'   => 0,
+                'total_amount'   => $waterAmount,
+                'amount_paid'    => 0,
+                'balance'        => $waterAmount,
+                'due_date'       => now()->addDays((int) \App\Models\Setting::get('invoice_due_days', 5)),
+                'period_start'   => now()->startOfMonth(),
+                'period_end'     => now()->endOfMonth(),
+                'status'         => 'draft',
+                'notes'          => 'Shared water billing',
+            ]);
+            $created++;
+        }
+    }
+
+    $message = "Shared water applied. Updated {$applied} invoice(s), created {$created} new invoice(s).";
+
+    return redirect()->route('properties.index')
+        ->with('success', $message);
+    }
 }

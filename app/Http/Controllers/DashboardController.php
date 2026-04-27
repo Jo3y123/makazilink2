@@ -2,6 +2,7 @@
  
 namespace App\Http\Controllers;
  
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Property;
 use App\Models\Unit;
@@ -14,10 +15,14 @@ use App\Models\Setting;
  
 class DashboardController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $user      = Auth::user();
         $alertDays = (int) Setting::get('lease_alert_days', 30);
+ 
+        // Date filter — defaults to current month
+        $dateFrom = $request->input('date_from', now()->startOfMonth()->format('Y-m-d'));
+        $dateTo   = $request->input('date_to', now()->endOfMonth()->format('Y-m-d'));
  
         if ($user->role === 'admin') {
             $stats = [
@@ -26,8 +31,7 @@ class DashboardController extends Controller
                 'occupied_units'   => Unit::where('status', 'occupied')->count(),
                 'vacant_units'     => Unit::where('status', 'vacant')->count(),
                 'total_tenants'    => Tenant::count(),
-                'monthly_revenue'  => Payment::whereMonth('payment_date', now()->month)
-                                        ->whereYear('payment_date', now()->year)
+                'monthly_revenue'  => Payment::whereBetween('payment_date', [$dateFrom, $dateTo])
                                         ->where('status', 'confirmed')
                                         ->sum('amount'),
                 'pending_payments' => Invoice::whereIn('status', ['draft', 'sent', 'partial', 'overdue'])->count(),
@@ -61,8 +65,7 @@ class DashboardController extends Controller
                 'occupied_units'   => Unit::where('status', 'occupied')->count(),
                 'vacant_units'     => Unit::where('status', 'vacant')->count(),
                 'total_tenants'    => Tenant::count(),
-                'monthly_revenue'  => Payment::whereMonth('payment_date', now()->month)
-                                        ->whereYear('payment_date', now()->year)
+                'monthly_revenue'  => Payment::whereBetween('payment_date', [$dateFrom, $dateTo])
                                         ->where('status', 'confirmed')
                                         ->sum('amount'),
                 'pending_payments' => Invoice::whereIn('status', ['draft', 'sent', 'partial', 'overdue'])->count(),
@@ -100,6 +103,7 @@ class DashboardController extends Controller
             ];
         }
  
-        return view('dashboard', compact('stats', 'user'));
+        return view('dashboard', compact('stats', 'user', 'dateFrom', 'dateTo'));
     }
 }
+ 

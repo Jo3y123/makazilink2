@@ -10,8 +10,9 @@ class Unit extends Model
     use HasFactory;
 
     protected $fillable = [
-        'property_id', 'unit_number', 'type', 'rent_amount', 'deposit_amount',
-        'status', 'floor_number', 'notes', 'has_water_meter', 'water_meter_number',
+    'property_id', 'unit_number', 'type', 'rent_amount', 'deposit_amount',
+    'status', 'floor_number', 'notes', 'has_water_meter', 'water_meter_number',
+    'image_path',
     ];
 
     protected function casts(): array

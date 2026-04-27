@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', 'MakaziLink v2') — Rental Management</title>
+    <title>@yield('title', \App\Models\Setting::get('system_name', 'MakaziLink v2')) — Rental Management</title>
  
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -74,13 +74,71 @@
             padding-left: 44px;
         }
  
-        .nav-section-label {
-            font-size: .65rem;
-            text-transform: uppercase;
-            letter-spacing: .08em;
+        .nav-section-btn {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 20px;
+            cursor: pointer;
+            user-select: none;
+            border: none;
+            background: none;
+            width: 100%;
+            text-align: left;
+            color: rgba(255,255,255,.65);
+            font-size: .85rem;
+            font-weight: 500;
+            transition: background .15s, color .15s;
+            margin-top: 2px;
+        }
+ 
+        .nav-section-btn .section-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+ 
+        .nav-section-btn .section-left i {
+            width: 18px;
+            text-align: center;
+            font-size: .95rem;
+            opacity: .8;
+        }
+ 
+        .nav-section-btn .section-arrow {
+            font-size: .7rem;
             color: rgba(255,255,255,.3);
-            padding: 16px 20px 6px;
-            font-weight: 600;
+            transition: transform .2s;
+        }
+ 
+        .nav-section-btn.collapsed .section-arrow {
+            transform: rotate(-90deg);
+        }
+ 
+        .nav-section-btn:hover {
+            background: rgba(255,255,255,.07);
+            color: #fff;
+        }
+ 
+        .nav-section-btn.active-group {
+            background: rgba(255,255,255,.07);
+            color: #fff;
+            border-left: 3px solid var(--ml-green);
+            padding-left: 17px;
+        }
+ 
+        .nav-group {
+            overflow: hidden;
+            transition: max-height .25s ease;
+            background: rgba(0,0,0,.12);
+        }
+ 
+        .nav-group .nav-link {
+            padding-left: 48px !important;
+        }
+ 
+        .nav-group .nav-link.active {
+            padding-left: 45px !important;
         }
  
         .sidebar-nav .nav-link {
@@ -111,6 +169,12 @@
             text-align: center;
             font-size: .95rem;
             opacity: .8;
+        }
+ 
+        .nav-divider {
+            height: 1px;
+            background: rgba(255,255,255,.06);
+            margin: 6px 20px;
         }
  
         .sidebar-footer {
@@ -152,18 +216,6 @@
             text-transform: capitalize;
         }
  
-        .btn-logout {
-            margin-left: auto;
-            background: none;
-            border: none;
-            color: rgba(255,255,255,.4);
-            padding: 4px;
-            cursor: pointer;
-            font-size: 1rem;
-        }
- 
-        .btn-logout:hover { color: #e74c3c; }
- 
         #topbar {
             position: fixed;
             top: 0;
@@ -191,21 +243,6 @@
             align-items: center;
             gap: 12px;
         }
- 
-        .role-badge {
-            font-size: .7rem;
-            padding: 3px 10px;
-            border-radius: 20px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: .04em;
-        }
- 
-        .role-admin      { background: #ffecd2; color: #b45309; }
-        .role-agent      { background: #dbeafe; color: #1e40af; }
-        .role-accountant { background: #dcfce7; color: #15803d; }
-        .role-caretaker  { background: #f3e8ff; color: #7e22ce; }
-        .role-tenant     { background: #fee2e2; color: #b91c1c; }
  
         #main-content {
             margin-left: var(--ml-sidebar-w);
@@ -281,6 +318,39 @@
         }
  
         #chatbot-btn:hover { transform: scale(1.08); }
+ 
+        #chatbot-bubble {
+            position: fixed;
+            bottom: 90px;
+            right: 88px;
+            background: #0f2d1e;
+            color: #fff;
+            padding: 8px 14px;
+            border-radius: 12px 12px 0 12px;
+            font-size: .78rem;
+            font-weight: 600;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            box-shadow: 0 4px 16px rgba(0,0,0,.15);
+            z-index: 9998;
+            animation: fadeInBubble .4s ease;
+            white-space: nowrap;
+        }
+ 
+        #chatbot-bubble::after {
+            content: '';
+            position: absolute;
+            bottom: -6px;
+            right: 10px;
+            width: 12px;
+            height: 12px;
+            background: #0f2d1e;
+            clip-path: polygon(0 0, 100% 0, 100% 100%);
+        }
+ 
+        @keyframes fadeInBubble {
+            from { opacity: 0; transform: translateY(8px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
  
         #chatbot-box {
             position: fixed;
@@ -387,20 +457,10 @@
             font-family: 'Plus Jakarta Sans', sans-serif;
         }
  
-        .chip:hover {
-            background: #1a7a4a;
-            color: #fff;
-        }
+        .chip:hover { background: #1a7a4a; color: #fff; }
  
-        .chip.secondary {
-            border-color: #e9ecef;
-            color: #6c757d;
-        }
- 
-        .chip.secondary:hover {
-            background: #f4f6f8;
-            color: #1a1a2e;
-        }
+        .chip.secondary { border-color: #e9ecef; color: #6c757d; }
+        .chip.secondary:hover { background: #f4f6f8; color: #1a1a2e; }
  
         .chatbot-input {
             padding: 12px;
@@ -442,75 +502,160 @@
 <nav id="sidebar">
     <div class="sidebar-brand">
         <a href="{{ route('dashboard') }}" class="brand-logo">
-            <span class="logo-icon"><i class="bi bi-buildings text-white"></i></span>
-            MakaziLink
+            @php $logoPath = \App\Models\Setting::get('logo_path', ''); @endphp
+            @if($logoPath)
+                <img src="{{ asset('storage/' . $logoPath) }}"
+                     alt="Logo"
+                     style="height:34px;width:34px;object-fit:cover;border-radius:8px;flex-shrink:0">
+            @else
+                <span class="logo-icon"><i class="bi bi-buildings text-white"></i></span>
+            @endif
+            {{ \App\Models\Setting::get('system_name', 'MakaziLink v2') }}
         </a>
-        <div class="brand-sub">Rental Management v2</div>
+        <div class="brand-sub">Rental Management System</div>
     </div>
  
-    <div class="sidebar-nav mt-1">
-        <div class="nav-section-label">Overview</div>
+    <div class="sidebar-nav mt-2">
  
-        <a href="{{ route('dashboard') }}"
-           class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}">
-            <i class="bi bi-grid-1x2"></i> Dashboard
-        </a>
+        {{-- Overview Group: Dashboard + Users --}}
+        <button class="nav-section-btn {{ request()->routeIs('dashboard') || request()->routeIs('settings.users') ? 'active-group' : '' }}"
+                id="btn-group-overview"
+                onclick="toggleGroup('group-overview', 'btn-group-overview')">
+            <span class="section-left">
+                <i class="bi bi-grid-1x2"></i> Overview
+            </span>
+            <i class="bi bi-chevron-down section-arrow"></i>
+        </button>
+        <div class="nav-group" id="group-overview">
+            <a href="{{ route('dashboard') }}"
+               class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}">
+                <i class="bi bi-speedometer2"></i> Dashboard
+            </a>
+            @hasrole(['admin', 'caretaker'])
+            <a href="{{ route('messages.index') }}"
+               class="nav-link {{ request()->routeIs('messages.*') ? 'active' : '' }}">
+                <i class="bi bi-chat-dots"></i> Messages
+                <span id="msg-badge" style="display:none;background:#e74c3c;color:#fff;border-radius:20px;padding:1px 7px;font-size:.65rem;font-weight:700;margin-left:auto"></span>
+            </a>
+            @endhasrole
+            @hasrole(['admin'])
+            <a href="{{ route('settings.users') }}"
+               class="nav-link {{ request()->routeIs('settings.users') ? 'active' : '' }}">
+                <i class="bi bi-person-badge"></i> Users
+            </a>
+            @endhasrole
+        </div>
+ 
+        <div class="nav-divider"></div>
  
         @hasrole(['admin', 'agent'])
-        <div class="nav-section-label">Properties</div>
-        <a href="{{ route('properties.index') }}"
-           class="nav-link {{ request()->routeIs('properties.*') ? 'active' : '' }}">
-            <i class="bi bi-building"></i> Properties
-        </a>
+        {{-- Properties Group --}}
+        <button class="nav-section-btn {{ request()->routeIs('properties.*') || request()->routeIs('units.*') || request()->routeIs('tenants.*') || request()->routeIs('leases.*') ? 'active-group' : '' }}"
+                id="btn-group-properties"
+                onclick="toggleGroup('group-properties', 'btn-group-properties')">
+            <span class="section-left">
+                <i class="bi bi-building"></i> Properties
+            </span>
+            <i class="bi bi-chevron-down section-arrow"></i>
+        </button>
+        <div class="nav-group" id="group-properties">
+            <a href="{{ route('properties.index') }}"
+               class="nav-link {{ request()->routeIs('properties.*') ? 'active' : '' }}">
+                <i class="bi bi-building"></i> All Properties
+            </a>
+            <a href="{{ route('units.index') }}"
+               class="nav-link {{ request()->routeIs('units.*') ? 'active' : '' }}">
+                <i class="bi bi-door-open"></i> Units
+            </a>
+            <a href="{{ route('tenants.index') }}"
+               class="nav-link {{ request()->routeIs('tenants.*') ? 'active' : '' }}">
+                <i class="bi bi-people"></i> Tenants
+            </a>
+            <a href="{{ route('leases.index') }}"
+               class="nav-link {{ request()->routeIs('leases.*') ? 'active' : '' }}">
+                <i class="bi bi-file-earmark-text"></i> Leases
+            </a>
+        </div>
         @endhasrole
  
-        @hasrole(['admin', 'agent', 'caretaker'])
-        <a href="{{ route('units.index') }}"
-           class="nav-link {{ request()->routeIs('units.*') ? 'active' : '' }}">
-            <i class="bi bi-door-open"></i> Units
-        </a>
-        <a href="{{ route('tenants.index') }}"
-           class="nav-link {{ request()->routeIs('tenants.*') ? 'active' : '' }}">
-            <i class="bi bi-people"></i> Tenants
-        </a>
-        @endhasrole
- 
-        @hasrole(['admin', 'agent'])
-        <a href="{{ route('leases.index') }}"
-           class="nav-link {{ request()->routeIs('leases.*') ? 'active' : '' }}">
-            <i class="bi bi-file-earmark-text"></i> Leases
-        </a>
+        @hasrole(['caretaker'])
+        <button class="nav-section-btn {{ request()->routeIs('units.*') || request()->routeIs('tenants.*') ? 'active-group' : '' }}"
+                id="btn-group-caretaker"
+                onclick="toggleGroup('group-caretaker', 'btn-group-caretaker')">
+            <span class="section-left">
+                <i class="bi bi-building"></i> Properties
+            </span>
+            <i class="bi bi-chevron-down section-arrow"></i>
+        </button>
+        <div class="nav-group" id="group-caretaker">
+            <a href="{{ route('units.index') }}"
+               class="nav-link {{ request()->routeIs('units.*') ? 'active' : '' }}">
+                <i class="bi bi-door-open"></i> Units
+            </a>
+            <a href="{{ route('tenants.index') }}"
+               class="nav-link {{ request()->routeIs('tenants.*') ? 'active' : '' }}">
+                <i class="bi bi-people"></i> Tenants
+            </a>
+        </div>
         @endhasrole
  
         @hasrole(['admin', 'accountant'])
-        <div class="nav-section-label">Finance</div>
-        <a href="{{ route('payments.index') }}"
-        class="nav-link {{ request()->routeIs('payments.*') ? 'active' : '' }}">
-            <i class="bi bi-cash-coin"></i> Payments
-        </a>
-        <a href="{{ route('invoices.index') }}"
-        class="nav-link {{ request()->routeIs('invoices.*') ? 'active' : '' }}">
-            <i class="bi bi-receipt"></i> Invoices
-        </a>
-        <a href="{{ route('reports.index') }}"
-        class="nav-link {{ request()->routeIs('reports.index') ? 'active' : '' }}">
-            <i class="bi bi-bar-chart-line"></i> Reports
-        </a>
-        <a href="{{ route('reports.properties') }}"
-        class="nav-link {{ request()->routeIs('reports.properties') || request()->routeIs('reports.property.*') ? 'active' : '' }}">
-            <i class="bi bi-building-check"></i> Property Reports
-        </a>
+        {{-- Finance Group --}}
+        <button class="nav-section-btn {{ request()->routeIs('payments.*') || request()->routeIs('invoices.*') || request()->routeIs('reports.*') ? 'active-group' : '' }}"
+                id="btn-group-finance"
+                onclick="toggleGroup('group-finance', 'btn-group-finance')">
+            <span class="section-left">
+                <i class="bi bi-cash-coin"></i> Finance
+            </span>
+            <i class="bi bi-chevron-down section-arrow"></i>
+        </button>
+        <div class="nav-group" id="group-finance">
+            <a href="{{ route('payments.index') }}"
+               class="nav-link {{ request()->routeIs('payments.*') ? 'active' : '' }}">
+                <i class="bi bi-cash-coin"></i> Payments
+            </a>
+            <a href="{{ route('invoices.index') }}"
+               class="nav-link {{ request()->routeIs('invoices.*') ? 'active' : '' }}">
+                <i class="bi bi-receipt"></i> Invoices
+            </a>
+            <a href="{{ route('reports.index') }}"
+               class="nav-link {{ request()->routeIs('reports.index') ? 'active' : '' }}">
+                <i class="bi bi-bar-chart-line"></i> Reports
+            </a>
+            <a href="{{ route('reports.properties') }}"
+               class="nav-link {{ request()->routeIs('reports.properties') || request()->routeIs('reports.property.*') ? 'active' : '' }}">
+                <i class="bi bi-building-check"></i> Property Reports
+            </a>
+            <a href="{{ route('reports.profit-loss') }}"
+               class="nav-link {{ request()->routeIs('reports.profit-loss*') ? 'active' : '' }}">
+                <i class="bi bi-graph-up-arrow"></i> Profit & Loss
+            </a>
+        </div>
         @endhasrole
  
         @hasrole(['admin', 'caretaker'])
-        <div class="nav-section-label">Operations</div>
-        <a href="{{ route('maintenance.index') }}"
-           class="nav-link {{ request()->routeIs('maintenance.*') ? 'active' : '' }}">
-            <i class="bi bi-tools"></i> Maintenance
-        </a>
+        {{-- Operations Group --}}
+        <button class="nav-section-btn {{ request()->routeIs('maintenance.*') || request()->routeIs('water.*') ? 'active-group' : '' }}"
+                id="btn-group-operations"
+                onclick="toggleGroup('group-operations', 'btn-group-operations')">
+            <span class="section-left">
+                <i class="bi bi-tools"></i> Operations
+            </span>
+            <i class="bi bi-chevron-down section-arrow"></i>
+        </button>
+        <div class="nav-group" id="group-operations">
+            <a href="{{ route('maintenance.index') }}"
+               class="nav-link {{ request()->routeIs('maintenance.*') ? 'active' : '' }}">
+                <i class="bi bi-tools"></i> Maintenance
+            </a>
+            <a href="{{ route('water.index') }}"
+               class="nav-link {{ request()->routeIs('water.*') ? 'active' : '' }}">
+                <i class="bi bi-droplet"></i> Water Readings
+            </a>
+        </div>
         @endhasrole
  
-        @hasrole(['admin', 'caretaker', 'accountant'])
+        @hasrole(['accountant'])
         <a href="{{ route('water.index') }}"
            class="nav-link {{ request()->routeIs('water.*') ? 'active' : '' }}">
             <i class="bi bi-droplet"></i> Water Readings
@@ -518,16 +663,24 @@
         @endhasrole
  
         @hasrole(['admin'])
-        <div class="nav-section-label">Administration</div>
-        <a href="{{ route('settings.index') }}"
-           class="nav-link {{ request()->routeIs('settings.index') ? 'active' : '' }}">
-            <i class="bi bi-gear"></i> Settings
-        </a>
-        <a href="{{ route('settings.users') }}"
-           class="nav-link {{ request()->routeIs('settings.users') ? 'active' : '' }}">
-            <i class="bi bi-person-badge"></i> Users
-        </a>
+        <div class="nav-divider"></div>
+        {{-- Settings Group --}}
+        <button class="nav-section-btn {{ request()->routeIs('settings.index') ? 'active-group' : '' }}"
+                id="btn-group-settings"
+                onclick="toggleGroup('group-settings', 'btn-group-settings')">
+            <span class="section-left">
+                <i class="bi bi-gear"></i> Settings
+            </span>
+            <i class="bi bi-chevron-down section-arrow"></i>
+        </button>
+        <div class="nav-group" id="group-settings">
+            <a href="{{ route('settings.index') }}"
+               class="nav-link {{ request()->routeIs('settings.index') ? 'active' : '' }}">
+                <i class="bi bi-sliders"></i> System Settings
+            </a>
+        </div>
         @endhasrole
+ 
     </div>
  
     <div class="sidebar-footer">
@@ -539,12 +692,6 @@
                 <div class="user-name">{{ auth()->user()->name }}</div>
                 <div class="user-role">{{ auth()->user()->role }}</div>
             </div>
-            <form action="{{ route('logout') }}" method="POST">
-                @csrf
-                <button type="submit" class="btn-logout" title="Logout">
-                    <i class="bi bi-box-arrow-right"></i>
-                </button>
-            </form>
         </div>
     </div>
 </nav>
@@ -556,9 +703,23 @@
     </button>
     <h1 class="page-title">@yield('page-title', 'Dashboard')</h1>
     <div class="topbar-right">
-        <span class="role-badge role-{{ auth()->user()->role }}">
-            {{ auth()->user()->role }}
-        </span>
+        <div class="d-flex align-items-center gap-2">
+            <div style="width:32px;height:32px;background:#e8f5ee;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;color:#1a7a4a;flex-shrink:0">
+                {{ strtoupper(substr(auth()->user()->name, 0, 2)) }}
+            </div>
+            <span style="font-size:.82rem;font-weight:600;color:#1a1a2e">
+                {{ explode(' ', auth()->user()->name)[0] }}
+            </span>
+        </div>
+        <form action="{{ route('logout') }}" method="POST" class="m-0">
+            @csrf
+            <button type="submit"
+                    style="background:none;border:1.5px solid #e9ecef;border-radius:8px;color:#6c757d;font-size:.78rem;cursor:pointer;padding:5px 12px;display:flex;align-items:center;gap:5px"
+                    onmouseover="this.style.borderColor='#e74c3c';this.style.color='#e74c3c'"
+                    onmouseout="this.style.borderColor='#e9ecef';this.style.color='#6c757d'">
+                <i class="bi bi-box-arrow-right"></i> Logout
+            </button>
+        </form>
     </div>
 </header>
  
@@ -584,22 +745,27 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 @stack('scripts')
  
+{{-- Chatbot Bubble --}}
+<div id="chatbot-bubble">👋 Need help? Ask me!</div>
+ 
 {{-- Chatbot Widget --}}
-<button id="chatbot-btn" onclick="toggleChatbot()" title="Ask MakaziLink Assistant">
+<button id="chatbot-btn" onclick="toggleChatbot()" title="Ask Assistant">
     <i class="bi bi-robot"></i>
 </button>
  
 <div id="chatbot-box">
     <div class="chatbot-header">
         <div class="title">
-            <i class="bi bi-robot"></i> MakaziLink Assistant
+            <i class="bi bi-robot"></i> {{ \App\Models\Setting::get('system_name', 'MakaziLink v2') }} Assistant
         </div>
         <button class="close-btn" onclick="toggleChatbot()">
             <i class="bi bi-x-lg"></i>
         </button>
     </div>
     <div class="chatbot-messages" id="chatbot-messages">
-        <div class="msg bot">Hi {{ auth()->user()->name }}! I am your MakaziLink assistant.
+        <div class="msg bot">Hi {{ auth()->user()->name }}! 👋 Welcome to the {{ \App\Models\Setting::get('system_name', 'MakaziLink v2') }} Assistant.
+ 
+I can help you with properties, tenants, payments, maintenance and more.
  
 Type a question or type <strong>help</strong> to browse topics.</div>
     </div>
@@ -613,6 +779,54 @@ Type a question or type <strong>help</strong> to browse topics.</div>
 <script>
 const ROLE = '{{ auth()->user()->role }}';
 let lastCategory = '';
+ 
+// Hide bubble after 4 seconds
+setTimeout(() => {
+    const bubble = document.getElementById('chatbot-bubble');
+    if (bubble) {
+        bubble.style.transition = 'opacity .5s';
+        bubble.style.opacity = '0';
+        setTimeout(() => bubble.remove(), 500);
+    }
+}, 4000);
+ 
+// Sidebar dropdown — only one open at a time
+function toggleGroup(groupId, btnId) {
+    const allGroups   = document.querySelectorAll('.nav-group');
+    const allBtns     = document.querySelectorAll('.nav-section-btn');
+    const targetGroup = document.getElementById(groupId);
+    const targetBtn   = document.getElementById(btnId);
+    const isOpen      = targetGroup.style.maxHeight && targetGroup.style.maxHeight !== '0px';
+ 
+    // Close all
+    allGroups.forEach(g => g.style.maxHeight = '0px');
+    allBtns.forEach(b => b.classList.add('collapsed'));
+ 
+    // Open target if it was closed
+    if (!isOpen) {
+        targetGroup.style.maxHeight = targetGroup.scrollHeight + 'px';
+        targetBtn.classList.remove('collapsed');
+    }
+}
+ 
+// Auto open active group on page load
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.nav-group').forEach(group => {
+        const hasActive = group.querySelector('.nav-link.active');
+        const btn       = group.previousElementSibling;
+        if (hasActive) {
+            group.style.maxHeight = group.scrollHeight + 'px';
+            if (btn && btn.classList.contains('nav-section-btn')) {
+                btn.classList.remove('collapsed');
+            }
+        } else {
+            group.style.maxHeight = '0px';
+            if (btn && btn.classList.contains('nav-section-btn')) {
+                btn.classList.add('collapsed');
+            }
+        }
+    });
+});
  
 const categories = {
     admin: [
@@ -656,7 +870,9 @@ const categories = {
 };
  
 function toggleChatbot() {
-    const box = document.getElementById('chatbot-box');
+    const box    = document.getElementById('chatbot-box');
+    const bubble = document.getElementById('chatbot-bubble');
+    if (bubble) bubble.remove();
     box.classList.toggle('open');
     if (box.classList.contains('open')) {
         document.getElementById('chatbot-input').focus();
@@ -681,10 +897,8 @@ function showQuestions(categoryLabel) {
     const cats = categories[ROLE] || [];
     const cat  = cats.find(c => c.label === categoryLabel);
     if (!cat) return;
- 
     msgs.innerHTML += `<div class="msg user">${categoryLabel}</div>`;
     msgs.innerHTML += `<div class="msg bot">What would you like to know about ${categoryLabel.replace(/[^\w\s]/gi, '').trim()}?</div>`;
- 
     const chips = cat.questions.map(q =>
         `<button class="chip" onclick="askQuestion('${q}')">${q}</button>`
     ).join('');
@@ -701,10 +915,7 @@ function askQuestion(question) {
  
     fetch('{{ route("chatbot.ask") }}', {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': '{{ csrf_token() }}'
-        },
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
         body: JSON.stringify({ message: question.toLowerCase() })
     })
     .then(r => r.json())
@@ -724,6 +935,35 @@ function askQuestion(question) {
     });
 }
  
+// Poll unread message count every 30 seconds
+@hasrole(['admin', 'caretaker'])
+function fetchUnreadCount() {
+    fetch('{{ route("messages.unread") }}')
+        .then(r => r.json())
+        .then(data => {
+            const badge = document.getElementById('msg-badge');
+            if (badge) {
+                if (data.count > 0) {
+                    badge.textContent = data.count;
+                    badge.style.display = 'inline';
+                } else {
+                    badge.style.display = 'none';
+                }
+            }
+        })
+        .catch(() => {});
+}
+fetchUnreadCount();
+setInterval(fetchUnreadCount, 30000);
+@endhasrole
+
+// Prevent scroll from changing number inputs
+document.addEventListener('wheel', function(e) {
+    if (document.activeElement.type === 'number') {
+        document.activeElement.blur();
+    }
+});
+
 function sendMessage() {
     const input = document.getElementById('chatbot-input');
     const msgs  = document.getElementById('chatbot-messages');
@@ -743,10 +983,7 @@ function sendMessage() {
  
     fetch('{{ route("chatbot.ask") }}', {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': '{{ csrf_token() }}'
-        },
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
         body: JSON.stringify({ message: text.toLowerCase() })
     })
     .then(r => r.json())

@@ -21,7 +21,8 @@
 
         <div class="card border-0 shadow-sm" style="border-radius:12px">
             <div class="card-body p-4">
-                <form action="{{ route('units.update', $unit) }}" method="POST">
+                <form action="{{ route('units.update', $unit) }}" method="POST"
+                      enctype="multipart/form-data">
                     @csrf
                     @method('PUT')
 
@@ -92,8 +93,8 @@
                             Status
                         </label>
                         <select name="status" class="form-select">
-                            <option value="vacant"           {{ $unit->status === 'vacant'           ? 'selected' : '' }}>Vacant</option>
-                            <option value="occupied"         {{ $unit->status === 'occupied'         ? 'selected' : '' }}>Occupied</option>
+                            <option value="vacant"            {{ $unit->status === 'vacant'            ? 'selected' : '' }}>Vacant</option>
+                            <option value="occupied"          {{ $unit->status === 'occupied'          ? 'selected' : '' }}>Occupied</option>
                             <option value="under_maintenance" {{ $unit->status === 'under_maintenance' ? 'selected' : '' }}>Under Maintenance</option>
                         </select>
                     </div>
@@ -117,12 +118,40 @@
                                placeholder="e.g. WM-001">
                     </div>
 
-                    <div class="mb-4">
+                    <div class="mb-3">
                         <label class="form-label" style="font-size:.8rem;font-weight:600;color:#374151">
                             Notes
                         </label>
                         <textarea name="notes" class="form-control" rows="2"
                                   placeholder="Optional notes">{{ old('notes', $unit->notes) }}</textarea>
+                    </div>
+
+                    {{-- Unit Image --}}
+                    <div class="mb-4">
+                        <label class="form-label" style="font-size:.8rem;font-weight:600;color:#374151">
+                            Unit Photo
+                        </label>
+                        @if($unit->image_path)
+                            <div class="mb-2">
+                                <img src="{{ asset('storage/' . $unit->image_path) }}"
+                                     alt="Unit {{ $unit->unit_number }}"
+                                     style="max-width:100%;max-height:180px;border-radius:8px;border:1px solid #e9ecef">
+                                <div style="font-size:.72rem;color:#6c757d;margin-top:4px">
+                                    Current photo — upload a new one to replace it
+                                </div>
+                            </div>
+                        @endif
+                        <input type="file" name="image" class="form-control"
+                               accept="image/*"
+                               style="font-size:.82rem"
+                               onchange="previewImage(this)">
+                        <small class="text-muted" style="font-size:.72rem">
+                            Optional. JPG, PNG or WEBP. Max 2MB.
+                        </small>
+                        <div id="img-preview-wrapper" style="display:none;margin-top:10px">
+                            <img id="img-preview"
+                                 style="max-width:100%;max-height:200px;border-radius:8px;border:1px solid #e9ecef">
+                        </div>
                     </div>
 
                     <button type="submit" class="btn w-100"
@@ -135,5 +164,20 @@
 
     </div>
 </div>
+
+@push('scripts')
+<script>
+function previewImage(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('img-preview').src = e.target.result;
+            document.getElementById('img-preview-wrapper').style.display = 'block';
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+</script>
+@endpush
 
 @endsection

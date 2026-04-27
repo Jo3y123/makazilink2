@@ -21,7 +21,7 @@
 
         <div class="card border-0 shadow-sm" style="border-radius:12px">
             <div class="card-body p-4">
-                <form action="{{ route('properties.store') }}" method="POST">
+                <form action="{{ route('properties.store') }}" method="POST" enctype="multipart/form-data">
                     @csrf
 
                     <div class="mb-3">
@@ -90,12 +90,29 @@
                         </div>
                     </div>
 
-                    <div class="mb-4">
+                    <div class="mb-3">
                         <label class="form-label" style="font-size:.8rem;font-weight:600;color:#374151">
                             Description
                         </label>
                         <textarea name="description" class="form-control" rows="3"
                                   placeholder="Optional notes about this property">{{ old('description') }}</textarea>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label" style="font-size:.8rem;font-weight:600;color:#374151">
+                            Property Photo
+                        </label>
+                        <input type="file" name="image" class="form-control"
+                               accept="image/*"
+                               style="font-size:.82rem"
+                               onchange="previewImage(this, 'img-preview')">
+                        <small class="text-muted" style="font-size:.72rem">
+                            Optional. JPG, PNG or WEBP. Max 2MB.
+                        </small>
+                        <div id="img-preview-wrapper" style="display:none;margin-top:10px">
+                            <img id="img-preview"
+                                 style="max-width:100%;max-height:200px;border-radius:8px;border:1px solid #e9ecef">
+                        </div>
                     </div>
 
                     <button type="submit" class="btn w-100"
@@ -108,5 +125,20 @@
 
     </div>
 </div>
+
+@push('scripts')
+<script>
+function previewImage(input, previewId) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById(previewId).src = e.target.result;
+            document.getElementById('img-preview-wrapper').style.display = 'block';
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+</script>
+@endpush
 
 @endsection

@@ -10,7 +10,17 @@
         <h2 class="mb-1" style="font-size:1.15rem;font-weight:700;color:#1a1a2e">All Invoices</h2>
         <p class="text-muted mb-0" style="font-size:.82rem">Manage tenant invoices</p>
     </div>
-    <div class="d-flex gap-2">
+    <div class="d-flex gap-2 align-items-center">
+        {{-- Mass Delete Button — hidden until checkboxes selected --}}
+        <button class="btn btn-sm btn-outline-danger"
+                id="massDeleteBtn"
+                style="display:none;border-radius:8px;font-size:.85rem;font-weight:600"
+                onclick="confirmMassDelete()">
+            <i class="bi bi-trash me-1"></i> Delete Selected
+            <span id="selectedCountBadge"
+                  class="badge ms-1"
+                  style="background:#b91c1c;color:#fff">0</span>
+        </button>
         <button class="btn btn-sm btn-outline-secondary"
                 data-bs-toggle="modal" data-bs-target="#bulkModal"
                 style="border-radius:8px;font-size:.85rem;font-weight:600;">
@@ -87,6 +97,16 @@
     </div>
 </div>
  
+{{-- Hidden Mass Delete Form --}}
+<form id="massDeleteForm"
+      action="{{ route('invoices.mass-destroy') }}"
+      method="POST"
+      style="display:none">
+    @csrf
+    @method('DELETE')
+    <div id="massDeleteIds"></div>
+</form>
+ 
 @if($invoices->isEmpty())
     <div class="text-center py-5">
         <div style="font-size:3rem;color:#d1d5db"><i class="bi bi-receipt"></i></div>
@@ -103,7 +123,15 @@
             <table class="table table-hover align-middle mb-0">
                 <thead style="background:#f8fafc;font-size:.75rem;text-transform:uppercase;letter-spacing:.05em;color:#6c757d">
                     <tr>
-                        <th class="px-4 py-3">Invoice #</th>
+                        <th class="px-4 py-3">
+                            <input type="checkbox"
+                                   id="selectAll"
+                                   class="form-check-input"
+                                   onchange="toggleSelectAll(this)"
+                                   style="cursor:pointer"
+                                   title="Select all">
+                        </th>
+                        <th class="py-3">Invoice #</th>
                         <th class="py-3">Tenant</th>
                         <th class="py-3">Unit</th>
                         <th class="py-3">Total (KES)</th>
@@ -117,6 +145,13 @@
                     @foreach($invoices as $invoice)
                     <tr>
                         <td class="px-4 py-3">
+                            <input type="checkbox"
+                                   class="form-check-input invoice-checkbox"
+                                   value="{{ $invoice->id }}"
+                                   onchange="updateSelection()"
+                                   style="cursor:pointer">
+                        </td>
+                        <td class="py-3">
                             <span style="font-weight:700;color:#1a1a2e">{{ $invoice->invoice_number }}</span>
                         </td>
                         <td class="py-3">{{ $invoice->tenant->user->name }}</td>
@@ -169,6 +204,53 @@
         </div>
     </div>
 @endif
+ 
+@push('scripts')
+<script>
+function toggleSelectAll(checkbox) {
+    document.querySelectorAll('.invoice-checkbox').forEach(cb => {
+        cb.checked = checkbox.checked;
+    });
+    updateSelection();
+}
+ 
+function updateSelection() {
+    const checked   = document.querySelectorAll('.invoice-checkbox:checked');
+    const total     = document.querySelectorAll('.invoice-checkbox').length;
+    const count     = checked.length;
+    const btn       = document.getElementById('massDeleteBtn');
+    const badge     = document.getElementById('selectedCountBadge');
+    const selectAll = document.getElementById('selectAll');
+ 
+    badge.textContent          = count;
+    btn.style.display          = count > 0 ? 'inline-flex' : 'none';
+    selectAll.checked          = count === total && total > 0;
+    selectAll.indeterminate    = count > 0 && count < total;
+}
+ 
+function confirmMassDelete() {
+    const checked = document.querySelectorAll('.invoice-checkbox:checked');
+    const count   = checked.length;
+ 
+    if (count === 0) return;
+ 
+    if (!confirm(`Are you sure you want to delete ${count} invoice(s)? This cannot be undone.`)) return;
+ 
+    const container = document.getElementById('massDeleteIds');
+    container.innerHTML = '';
+ 
+    checked.forEach(cb => {
+        const input = document.createElement('input');
+        input.type  = 'hidden';
+        input.name  = 'ids[]';
+        input.value = cb.value;
+        container.appendChild(input);
+    });
+ 
+    document.getElementById('massDeleteForm').submit();
+}
+</script>
+@endpush
  
 @endsection
  

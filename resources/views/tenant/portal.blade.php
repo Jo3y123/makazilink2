@@ -132,7 +132,7 @@
 <header class="portal-header">
     <div class="brand">
         <div class="brand-icon"><i class="bi bi-buildings text-white"></i></div>
-        MakaziLink Tenant Portal
+        {{ \App\Models\Setting::get('system_name', 'MakaziLink v2') }} Tenant Portal
     </div>
     <div class="d-flex align-items-center gap-3">
         <span style="font-size:.82rem;opacity:.7">{{ $user->name }}</span>
@@ -169,6 +169,20 @@
     </div>
     @else
  
+    {{-- Messages Button --}}
+    <a href="{{ route('tenant.messages') }}"
+       class="d-flex align-items-center gap-3 mb-4 p-3"
+       style="background:#fff;border-radius:12px;border:1px solid #e9ecef;text-decoration:none;color:inherit">
+        <div style="width:40px;height:40px;background:#e8f5ee;border-radius:10px;display:flex;align-items:center;justify-content:center;color:#1a7a4a;font-size:1.1rem;flex-shrink:0">
+            <i class="bi bi-chat-dots"></i>
+        </div>
+        <div>
+            <div style="font-size:.88rem;font-weight:700;color:#1a1a2e">Messages</div>
+            <div style="font-size:.75rem;color:#6c757d">Send a message to your landlord or caretaker</div>
+        </div>
+        <i class="bi bi-chevron-right ms-auto" style="color:#9ca3af"></i>
+    </a>
+
     {{-- Summary Stats --}}
     <div class="stat-row">
         <div class="mini-stat">
