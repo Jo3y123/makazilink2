@@ -14,14 +14,14 @@ class UnitController extends Controller
         $user = auth()->user();
 
         $units = Unit::with('property')
-            ->when(!$user->isAdmin(), function($q) use ($user) {
-                $q->whereHas('property', function ($query) use ($user) {
-                    $query->where('owner_id', $user->id)
-                          ->orWhere('agent_id', $user->id);
-                });
-            })
-            ->latest()
-            ->get();
+        ->when(!$user->isAdmin() && $user->role !== 'caretaker', function($q) use ($user) {
+            $q->whereHas('property', function ($query) use ($user) {
+                $query->where('owner_id', $user->id)
+                    ->orWhere('agent_id', $user->id);
+            });
+        })
+        ->latest()
+        ->get();
 
         $properties = $user->isAdmin()
             ? Property::all()

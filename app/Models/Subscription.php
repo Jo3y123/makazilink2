@@ -8,22 +8,24 @@ use Carbon\Carbon;
 class Subscription extends Model
 {
     protected $fillable = [
-        'client_name',
-        'client_email',
-        'client_phone',
-        'plan',
-        'status',
-        'trial_ends_at',
-        'expires_at',
-        'max_units',
-        'monthly_fee',
-        'notes',
+    'client_name',
+    'client_email',
+    'client_phone',
+    'plan',
+    'status',
+    'trial_ends_at',
+    'expires_at',
+    'max_units',
+    'monthly_fee',
+    'notes',
+    'is_exempt',
     ];
 
     protected $casts = [
-        'trial_ends_at' => 'date',
-        'expires_at'    => 'date',
-        'monthly_fee'   => 'decimal:2',
+    'trial_ends_at' => 'date',
+    'expires_at'    => 'date',
+    'monthly_fee'   => 'decimal:2',
+    'is_exempt'     => 'boolean',
     ];
 
     public function isActive(): bool

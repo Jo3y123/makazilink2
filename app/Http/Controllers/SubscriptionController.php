@@ -39,6 +39,7 @@ class SubscriptionController extends Controller
             'expires_at'   => 'nullable|date',
             'monthly_fee'  => 'required|numeric|min:0',
             'notes'        => 'nullable|string|max:500',
+            'is_exempt'    => 'nullable|boolean',
         ]);
 
         $maxUnits = match($request->plan) {
@@ -51,7 +52,10 @@ class SubscriptionController extends Controller
 
         Subscription::updateOrCreate(
             ['id' => 1],
-            array_merge($request->all(), ['max_units' => $maxUnits])
+            array_merge($request->all(), [
+                'max_units'  => $maxUnits,
+                'is_exempt'  => $request->boolean('is_exempt'),
+            ])
         );
 
         return redirect()->route('subscription.index')

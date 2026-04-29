@@ -241,6 +241,24 @@
                     <textarea name="notes" class="form-control" rows="2"
                               placeholder="Optional notes about this client">{{ $subscription?->notes ?? '' }}</textarea>
                 </div>
+
+                <div class="col-12">
+                    <div class="p-3" style="background:#f0fdf4;border-radius:8px;border:1px solid #86efac">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox"
+                                   name="is_exempt" id="is_exempt" value="1"
+                                   {{ ($subscription?->is_exempt ?? false) ? 'checked' : '' }}>
+                            <label class="form-check-label" for="is_exempt"
+                                   style="font-size:.85rem;font-weight:600;color:#15803d">
+                                Exempt from subscription checks
+                            </label>
+                        </div>
+                        <div style="font-size:.75rem;color:#6c757d;margin-top:4px;padding-left:24px">
+                            When ticked this client will never be locked out regardless of subscription status.
+                            Use for your own installations or trusted clients.
+                        </div>
+                    </div>
+                </div>
             </div>
             <div class="mt-4">
                 <button type="submit" class="btn"

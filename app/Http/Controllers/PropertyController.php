@@ -14,12 +14,12 @@ class PropertyController extends Controller
         $user = Auth::user();
  
         $properties = Property::with('owner', 'units')
-            ->when(!$user->isAdmin(), function($q) use ($user) {
-                $q->where('owner_id', $user->id)
-                  ->orWhere('agent_id', $user->id);
-            })
-            ->latest()
-            ->get();
+        ->when(!$user->isAdmin() && $user->role !== 'caretaker', function($q) use ($user) {
+            $q->where('owner_id', $user->id)
+            ->orWhere('agent_id', $user->id);
+        })
+        ->latest()
+        ->get();
  
         return view('properties.index', compact('properties'));
     }

@@ -32,10 +32,15 @@ class CheckSubscription
                 return $next($request);
             }
 
-            // Check if subscription is active
-            if (!$subscription->isActive()) {
-                return redirect()->route('subscription.expired');
-            }
+            // Skip check if exempt
+        if ($subscription->is_exempt) {
+            return $next($request);
+        }
+
+        // Check if subscription is active
+        if (!$subscription->isActive()) {
+            return redirect()->route('subscription.expired');
+        }
         }
 
         return $next($request);

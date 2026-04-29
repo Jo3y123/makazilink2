@@ -95,10 +95,15 @@
         </p>
     </div>
 
+    <a href="{{ route('renew.index') }}"
+       style="display:block;background:#1a7a4a;color:#fff;border-radius:8px;padding:10px 24px;font-size:.88rem;font-weight:600;text-decoration:none;text-align:center;margin-bottom:12px">
+        <i class="bi bi-arrow-repeat me-2"></i>Renew Subscription
+    </a>
+
     <form action="{{ route('logout') }}" method="POST">
         @csrf
         <button type="submit"
-                style="background:#1a7a4a;color:#fff;border:none;border-radius:8px;padding:10px 24px;font-size:.88rem;font-weight:600;cursor:pointer;width:100%">
+                style="background:none;border:1.5px solid #e9ecef;border-radius:8px;padding:10px 24px;font-size:.88rem;font-weight:600;cursor:pointer;width:100%;color:#6c757d">
             <i class="bi bi-box-arrow-right me-2"></i>Logout
         </button>
     </form>
