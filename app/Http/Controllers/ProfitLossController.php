@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Payment;
 use App\Models\MaintenanceRequest;
+use App\Models\Salary;
 use App\Models\Setting;
 use Barryvdh\DomPDF\Facade\Pdf;
 
@@ -22,26 +23,32 @@ class ProfitLossController extends Controller
                 ->where('status', 'confirmed')
                 ->sum('amount');
 
-            $expenses = MaintenanceRequest::whereMonth('created_at', $i)
+            $maintenance = MaintenanceRequest::whereMonth('created_at', $i)
                 ->whereYear('created_at', $year)
                 ->whereNotNull('cost')
                 ->sum('cost');
 
+            $salaries = Salary::whereMonth('payment_date', $i)
+                ->whereYear('payment_date', $year)
+                ->sum('amount');
+
+            $expenses = $maintenance + $salaries;
+
             $months[] = [
-                'month'   => now()->setMonth($i)->format('F'),
-                'income'  => $income,
-                'expenses'=> $expenses,
-                'profit'  => $income - $expenses,
+                'month'       => now()->setMonth($i)->format('F'),
+                'income'      => $income,
+                'maintenance' => $maintenance,
+                'salaries'    => $salaries,
+                'expenses'    => $expenses,
+                'profit'      => $income - $expenses,
             ];
         }
 
         $totalIncome   = collect($months)->sum('income');
         $totalExpenses = collect($months)->sum('expenses');
         $totalProfit   = $totalIncome - $totalExpenses;
-
-        $currency = Setting::get('currency', 'KES');
-
-        $years = range(now()->year, now()->year - 4);
+        $currency      = Setting::get('currency', 'KES');
+        $years         = range(now()->year, now()->year - 4);
 
         return view('reports.profit-loss', compact(
             'months', 'totalIncome', 'totalExpenses', 'totalProfit',
@@ -61,16 +68,24 @@ class ProfitLossController extends Controller
                 ->where('status', 'confirmed')
                 ->sum('amount');
 
-            $expenses = MaintenanceRequest::whereMonth('created_at', $i)
+            $maintenance = MaintenanceRequest::whereMonth('created_at', $i)
                 ->whereYear('created_at', $year)
                 ->whereNotNull('cost')
                 ->sum('cost');
 
+            $salaries = Salary::whereMonth('payment_date', $i)
+                ->whereYear('payment_date', $year)
+                ->sum('amount');
+
+            $expenses = $maintenance + $salaries;
+
             $months[] = [
-                'month'    => now()->setMonth($i)->format('F'),
-                'income'   => $income,
-                'expenses' => $expenses,
-                'profit'   => $income - $expenses,
+                'month'       => now()->setMonth($i)->format('F'),
+                'income'      => $income,
+                'maintenance' => $maintenance,
+                'salaries'    => $salaries,
+                'expenses'    => $expenses,
+                'profit'      => $income - $expenses,
             ];
         }
 

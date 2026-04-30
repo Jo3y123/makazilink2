@@ -21,6 +21,12 @@
                   class="badge ms-1"
                   style="background:#b91c1c;color:#fff">0</span>
         </button>
+        
+        <a href="{{ route('export.invoices') }}" class="btn btn-sm btn-outline-secondary"
+           style="border-radius:8px;font-size:.85rem;font-weight:600;">
+            <i class="bi bi-file-earmark-excel me-1"></i> Export Excel
+        </a>
+
         <button class="btn btn-sm btn-outline-secondary"
                 data-bs-toggle="modal" data-bs-target="#bulkModal"
                 style="border-radius:8px;font-size:.85rem;font-weight:600;">

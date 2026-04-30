@@ -11,6 +11,10 @@
         <p class="text-muted mb-0" style="font-size:.82rem">Payment history and receipts</p>
     </div>
     <div class="d-flex gap-2">
+        <a href="{{ route('export.payments') }}" class="btn btn-sm btn-outline-secondary"
+           style="border-radius:8px;font-size:.85rem;font-weight:600;">
+            <i class="bi bi-file-earmark-excel me-1"></i> Export Excel
+        </a>
         <a href="{{ route('payments.bulk.whatsapp') }}" class="btn btn-sm"
            style="background:#25d366;color:#fff;border-radius:8px;padding:8px 16px;font-size:.85rem;font-weight:600;">
             <i class="bi bi-whatsapp me-1"></i> Send Reminders

@@ -25,6 +25,10 @@
            class="btn btn-sm btn-outline-secondary" style="border-radius:8px">
             <i class="bi bi-file-pdf me-1"></i>PDF
         </a>
+        <a href="{{ route('export.profit-loss') }}?year={{ $year }}"
+           class="btn btn-sm btn-outline-secondary" style="border-radius:8px">
+            <i class="bi bi-file-earmark-excel me-1"></i>Excel
+        </a>
     </div>
 </div>
 
@@ -98,49 +102,59 @@
         <table class="table table-hover align-middle mb-0">
             <thead style="background:#f8fafc;font-size:.75rem;text-transform:uppercase;letter-spacing:.05em;color:#6c757d">
                 <tr>
-                    <th class="px-4 py-3">Month</th>
-                    <th class="py-3">Income ({{ $currency }})</th>
-                    <th class="py-3">Expenses ({{ $currency }})</th>
-                    <th class="py-3">Net Profit ({{ $currency }})</th>
-                    <th class="py-3">Status</th>
-                </tr>
+                        <th class="px-4 py-3">Month</th>
+                        <th class="py-3">Income ({{ $currency }})</th>
+                        <th class="py-3">Maintenance ({{ $currency }})</th>
+                        <th class="py-3">Salaries ({{ $currency }})</th>
+                        <th class="py-3">Total Expenses ({{ $currency }})</th>
+                        <th class="py-3">Net Profit ({{ $currency }})</th>
+                        <th class="py-3">Status</th>
+                    </tr>
             </thead>
             <tbody style="font-size:.85rem">
-                @foreach($months as $month)
-                <tr>
-                    <td class="px-4 py-3" style="font-weight:600;color:#1a1a2e">{{ $month['month'] }}</td>
-                    <td class="py-3" style="color:#15803d;font-weight:600">
-                        {{ number_format($month['income']) }}
-                    </td>
-                    <td class="py-3" style="color:{{ $month['expenses'] > 0 ? '#b91c1c' : '#6c757d' }}">
-                        {{ number_format($month['expenses']) }}
-                    </td>
-                    <td class="py-3" style="font-weight:700;color:{{ $month['profit'] >= 0 ? '#15803d' : '#b91c1c' }}">
-                        {{ number_format($month['profit']) }}
-                    </td>
-                    <td class="py-3">
-                        @if($month['income'] == 0 && $month['expenses'] == 0)
-                            <span class="badge" style="background:#f1f5f9;color:#64748b;border-radius:20px;font-size:.7rem">No Activity</span>
-                        @elseif($month['profit'] >= 0)
-                            <span class="badge" style="background:#dcfce7;color:#15803d;border-radius:20px;font-size:.7rem">Profit</span>
-                        @else
-                            <span class="badge" style="background:#fee2e2;color:#b91c1c;border-radius:20px;font-size:.7rem">Loss</span>
-                        @endif
-                    </td>
-                </tr>
-                @endforeach
-            </tbody>
+                    @foreach($months as $month)
+                    <tr>
+                        <td class="px-4 py-3" style="font-weight:600;color:#1a1a2e">{{ $month['month'] }}</td>
+                        <td class="py-3" style="color:#15803d;font-weight:600">
+                            {{ number_format($month['income']) }}
+                        </td>
+                        <td class="py-3" style="color:{{ $month['maintenance'] > 0 ? '#b91c1c' : '#6c757d' }}">
+                            {{ number_format($month['maintenance']) }}
+                        </td>
+                        <td class="py-3" style="color:{{ $month['salaries'] > 0 ? '#b91c1c' : '#6c757d' }}">
+                            {{ number_format($month['salaries']) }}
+                        </td>
+                        <td class="py-3" style="color:{{ $month['expenses'] > 0 ? '#b91c1c' : '#6c757d' }};font-weight:600">
+                            {{ number_format($month['expenses']) }}
+                        </td>
+                        <td class="py-3" style="font-weight:700;color:{{ $month['profit'] >= 0 ? '#15803d' : '#b91c1c' }}">
+                            {{ number_format($month['profit']) }}
+                        </td>
+                        <td class="py-3">
+                            @if($month['income'] == 0 && $month['expenses'] == 0)
+                                <span class="badge" style="background:#f1f5f9;color:#64748b;border-radius:20px;font-size:.7rem">No Activity</span>
+                            @elseif($month['profit'] >= 0)
+                                <span class="badge" style="background:#dcfce7;color:#15803d;border-radius:20px;font-size:.7rem">Profit</span>
+                            @else
+                                <span class="badge" style="background:#fee2e2;color:#b91c1c;border-radius:20px;font-size:.7rem">Loss</span>
+                            @endif
+                        </td>
+                    </tr>
+                    @endforeach
+                </tbody>
             <tfoot style="background:#f8fafc">
-                <tr style="font-size:.85rem;font-weight:700">
-                    <td class="px-4 py-3" style="color:#1a1a2e">Total</td>
-                    <td class="py-3" style="color:#15803d">{{ number_format($totalIncome) }}</td>
-                    <td class="py-3" style="color:#b91c1c">{{ number_format($totalExpenses) }}</td>
-                    <td class="py-3" style="color:{{ $totalProfit >= 0 ? '#15803d' : '#b91c1c' }}">
-                        {{ number_format($totalProfit) }}
-                    </td>
-                    <td class="py-3"></td>
-                </tr>
-            </tfoot>
+                        <tr style="font-size:.85rem;font-weight:700">
+                            <td class="px-4 py-3" style="color:#1a1a2e">Total</td>
+                            <td class="py-3" style="color:#15803d">{{ number_format($totalIncome) }}</td>
+                            <td class="py-3" style="color:#b91c1c">{{ number_format(collect($months)->sum('maintenance')) }}</td>
+                            <td class="py-3" style="color:#b91c1c">{{ number_format(collect($months)->sum('salaries')) }}</td>
+                            <td class="py-3" style="color:#b91c1c">{{ number_format($totalExpenses) }}</td>
+                            <td class="py-3" style="color:{{ $totalProfit >= 0 ? '#15803d' : '#b91c1c' }}">
+                                {{ number_format($totalProfit) }}
+                            </td>
+                            <td class="py-3"></td>
+                        </tr>
+                    </tfoot>
         </table>
     </div>
 </div>

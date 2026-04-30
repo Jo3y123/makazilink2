@@ -21,10 +21,16 @@
         <div style="font-size:3rem;color:#d1d5db"><i class="bi bi-people"></i></div>
         <h3 style="font-size:1rem;font-weight:700;color:#1a1a2e;margin-top:12px">No tenants yet</h3>
         <p class="text-muted" style="font-size:.82rem">Click Add Tenant to register your first tenant</p>
+        <div class="d-flex gap-2">
+        <a href="{{ route('export.tenants') }}" class="btn btn-sm btn-outline-secondary"
+           style="border-radius:8px;font-size:.85rem;font-weight:600;">
+            <i class="bi bi-file-earmark-excel me-1"></i> Export Excel
+        </a>
         <a href="{{ route('tenants.create') }}" class="btn btn-sm"
            style="background:#1a7a4a;color:#fff;border-radius:8px;padding:8px 20px;font-size:.85rem;font-weight:600;">
             <i class="bi bi-plus-lg me-1"></i> Add Tenant
         </a>
+    </div>
     </div>
 @else
     <div class="card border-0 shadow-sm" style="border-radius:12px">

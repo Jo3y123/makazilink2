@@ -22,6 +22,8 @@ use App\Http\Controllers\MessageController;
 use App\Http\Controllers\ProfitLossController;
 use App\Http\Controllers\SubscriptionController;
 use App\Http\Controllers\RenewalController;
+use App\Http\Controllers\ExportController;
+use App\Http\Controllers\SalaryController;
  
 // Auth routes (guests only)
 Route::middleware('guest')->group(function () {
@@ -148,6 +150,22 @@ Route::middleware(['auth', 'role:admin,agent,accountant,caretaker'])->group(func
     // Messages unread count
     Route::get('/messages/unread', [MessageController::class, 'unreadCount'])->name('messages.unread');
  
+    // Salaries
+    Route::middleware('role:admin,accountant')->prefix('salaries')->name('salaries.')->group(function () {
+        Route::get('/',              [SalaryController::class, 'index'])->name('index');
+        Route::post('/',             [SalaryController::class, 'store'])->name('store');
+        Route::delete('/{salary}',   [SalaryController::class, 'destroy'])->name('destroy');
+    });
+
+    // Excel Exports
+    Route::middleware('role:admin,accountant')->prefix('export')->name('export.')->group(function () {
+        Route::get('/payments',    [ExportController::class, 'payments'])->name('payments');
+        Route::get('/invoices',    [ExportController::class, 'invoices'])->name('invoices');
+        Route::get('/tenants',     [ExportController::class, 'tenants'])->name('tenants');
+        Route::get('/profit-loss', [ExportController::class, 'profitLoss'])->name('profit-loss');
+        Route::get('/salaries',    [ExportController::class, 'salaries'])->name('salaries');
+    });
+
     Route::middleware('role:admin,accountant')->prefix('reports')->name('reports.')->group(function () {
         Route::get('/',                          [ReportController::class, 'index'])->name('index');
         Route::get('/properties',                [PropertyReportController::class, 'index'])->name('properties');
