@@ -185,5 +185,7 @@ Route::middleware(['auth', 'role:tenant'])->prefix('portal')->name('tenant.')->g
     Route::get('/',          [TenantPortalController::class, 'index'])->name('portal');
     Route::get('/messages',  [MessageController::class, 'tenantInbox'])->name('messages');
     Route::post('/messages', [MessageController::class, 'tenantSend'])->name('messages.send');
+    Route::post('/pay',      [MpesaController::class, 'tenantPay'])->name('pay');
+    Route::get('/pay/status',[MpesaController::class, 'tenantPayStatus'])->name('pay.status');
 });
  

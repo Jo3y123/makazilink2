@@ -267,8 +267,8 @@
             <div class="empty-state"><i class="bi bi-receipt fs-4 d-block mb-2"></i>No invoices yet</div>
         @else
             @foreach($invoices as $invoice)
-            <div class="info-row">
-                <div>
+            <div class="info-row" style="flex-wrap:wrap;gap:8px">
+                <div style="flex:1;min-width:0">
                     <div style="font-size:.83rem;font-weight:600;color:#1a1a2e">{{ $invoice->invoice_number }}</div>
                     <div style="font-size:.75rem;color:#6c757d">
                         {{ $invoice->period_start->format('d M Y') }} — {{ $invoice->period_end->format('d M Y') }}
@@ -280,13 +280,21 @@
                     @if($invoice->status === 'paid')
                         <span class="badge-paid">Paid</span>
                     @elseif($invoice->status === 'partial')
-                        <span class="badge-partial">Partial</span>
+                        <span class="badge-partial">Partial · KES {{ number_format($invoice->balance) }} left</span>
                     @elseif($invoice->status === 'overdue')
                         <span class="badge-overdue">Overdue</span>
                     @else
                         <span class="badge-draft">{{ ucfirst($invoice->status) }}</span>
                     @endif
                 </div>
+                @if($invoice->balance > 0)
+                <div style="width:100%">
+                    <button onclick="showPayModal({{ $invoice->id }}, {{ $invoice->balance }})"
+                            style="width:100%;background:#1a7a4a;color:#fff;border:none;border-radius:8px;padding:8px;font-size:.82rem;font-weight:600;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif">
+                        <i class="bi bi-phone me-1"></i>Pay KES {{ number_format($invoice->balance) }} via M-Pesa
+                    </button>
+                </div>
+                @endif
             </div>
             @endforeach
         @endif
@@ -386,6 +394,63 @@
 </div>
  
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+{{-- Pay Modal --}}
+<div id="payModal"
+     style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:9000;align-items:center;justify-content:center"
+     onclick="if(event.target===this) closePayModal()">
+    <div style="background:#fff;border-radius:16px;width:90%;max-width:400px;padding:28px;box-shadow:0 20px 60px rgba(0,0,0,.2)">
+        <h3 style="font-size:1rem;font-weight:700;color:#1a1a2e;margin-bottom:8px">
+            <i class="bi bi-phone me-2 text-success"></i>Pay via M-Pesa
+        </h3>
+        <p style="font-size:.82rem;color:#6c757d;margin-bottom:16px">
+            Enter your M-Pesa number. You will receive a prompt to enter your PIN.
+        </p>
+        <form action="{{ route('tenant.pay') }}" method="POST">
+            @csrf
+            <input type="hidden" name="invoice_id" id="modal_invoice_id">
+            <div class="mb-3">
+                <label style="font-size:.8rem;font-weight:600;color:#374151;display:block;margin-bottom:6px">
+                    Amount
+                </label>
+                <div id="modal_amount_display"
+                     style="font-size:1.1rem;font-weight:700;color:#1a7a4a;margin-bottom:12px">
+                </div>
+                <label style="font-size:.8rem;font-weight:600;color:#374151;display:block;margin-bottom:6px">
+                    M-Pesa Phone Number <span style="color:#b91c1c">*</span>
+                </label>
+                <input type="text" name="phone"
+                       class="form-control"
+                       placeholder="e.g. 0712345678"
+                       value="{{ $user->phone }}"
+                       style="border-radius:8px;font-size:.85rem"
+                       required>
+                <small style="font-size:.72rem;color:#6c757d">
+                    Make sure this is your M-Pesa registered number
+                </small>
+            </div>
+            <button type="submit"
+                    style="width:100%;background:#1a7a4a;color:#fff;border:none;border-radius:8px;padding:12px;font-size:.9rem;font-weight:600;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;margin-bottom:8px">
+                <i class="bi bi-send me-2"></i>Send Payment Request
+            </button>
+            <button type="button" onclick="closePayModal()"
+                    style="width:100%;background:none;border:1.5px solid #e9ecef;border-radius:8px;padding:10px;font-size:.85rem;color:#6c757d;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif">
+                Cancel
+            </button>
+        </form>
+    </div>
+</div>
+
+<script>
+function showPayModal(invoiceId, amount) {
+    document.getElementById('modal_invoice_id').value = invoiceId;
+    document.getElementById('modal_amount_display').textContent = 'KES ' + amount.toLocaleString();
+    document.getElementById('payModal').style.display = 'flex';
+}
+
+function closePayModal() {
+    document.getElementById('payModal').style.display = 'none';
+}
+</script>
 </body>
 </html>
  
