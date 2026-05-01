@@ -65,5 +65,37 @@ class TenantPortalController extends Controller
             'unpaidInvoices'
         ));
     }
+
+    public function submitMaintenance(Request $request)
+    {
+    $user   = Auth::user();
+    $tenant = $user->tenant;
+
+    if (!$tenant || !$tenant->activeLease) {
+        return back()->with('error', 'You do not have an active lease.');
+    }
+
+    $request->validate([
+        'title'       => 'required|string|max:255',
+        'description' => 'nullable|string|max:1000',
+        'category'    => 'required|in:plumbing,electrical,general,structural,appliance,other',
+        'priority'    => 'required|in:low,normal,high,urgent',
+    ]);
+
+    $lease = $tenant->activeLease;
+
+    MaintenanceRequest::create([
+        'title'       => $request->title,
+        'description' => $request->description,
+        'category'    => $request->category,
+        'priority'    => $request->priority,
+        'status'      => 'open',
+        'unit_id'     => $lease->unit_id,
+        'tenant_id'   => $tenant->id,
+        'reported_by' => $user->id,
+    ]);
+
+    return back()->with('success', 'Maintenance request submitted successfully. The caretaker will be in touch.');
+    }
 }
  

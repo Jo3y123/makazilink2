@@ -114,15 +114,17 @@ Route::middleware(['auth', 'role:admin,agent,accountant,caretaker'])->group(func
     });
  
     Route::middleware('role:admin,accountant')->prefix('invoices')->name('invoices.')->group(function () {
-        Route::get('/',               [InvoiceController::class, 'index'])->name('index');
-        Route::get('/create',         [InvoiceController::class, 'create'])->name('create');
-        Route::post('/',              [InvoiceController::class, 'store'])->name('store');
-        Route::post('/bulk-generate', [InvoiceController::class, 'bulkGenerate'])->name('bulk');
-        Route::delete('/mass-destroy',[InvoiceController::class, 'massDestroy'])->name('mass-destroy');
-        Route::get('/{invoice}',      [InvoiceController::class, 'show'])->name('show');
-        Route::get('/{invoice}/pdf',  [InvoiceController::class, 'pdf'])->name('pdf');
-        Route::delete('/{invoice}',   [InvoiceController::class, 'destroy'])->name('destroy');
-    });
+    Route::get('/',               [InvoiceController::class, 'index'])->name('index');
+    Route::get('/create',         [InvoiceController::class, 'create'])->name('create');
+    Route::post('/',              [InvoiceController::class, 'store'])->name('store');
+    Route::post('/bulk-generate', [InvoiceController::class, 'bulkGenerate'])->name('bulk');
+    Route::delete('/mass-destroy',[InvoiceController::class, 'massDestroy'])->name('mass-destroy');
+    Route::get('/{invoice}',      [InvoiceController::class, 'show'])->name('show');
+    Route::get('/{invoice}/edit', [InvoiceController::class, 'edit'])->name('edit');
+    Route::get('/{invoice}/pdf',  [InvoiceController::class, 'pdf'])->name('pdf');
+    Route::put('/{invoice}',      [InvoiceController::class, 'update'])->name('update');
+    Route::delete('/{invoice}',   [InvoiceController::class, 'destroy'])->name('destroy');
+});
  
     Route::middleware('role:admin,caretaker')->prefix('maintenance')->name('maintenance.')->group(function () {
         Route::get('/',                   [MaintenanceController::class, 'index'])->name('index');
@@ -200,10 +202,11 @@ Route::post('/mpesa/callback', [MpesaController::class, 'callback'])->name('mpes
  
 // Tenant Portal
 Route::middleware(['auth', 'role:tenant'])->prefix('portal')->name('tenant.')->group(function () {
-    Route::get('/',          [TenantPortalController::class, 'index'])->name('portal');
-    Route::get('/messages',  [MessageController::class, 'tenantInbox'])->name('messages');
-    Route::post('/messages', [MessageController::class, 'tenantSend'])->name('messages.send');
-    Route::post('/pay',      [MpesaController::class, 'tenantPay'])->name('pay');
-    Route::get('/pay/status',[MpesaController::class, 'tenantPayStatus'])->name('pay.status');
+    Route::get('/',              [TenantPortalController::class, 'index'])->name('portal');
+    Route::get('/messages',      [MessageController::class, 'tenantInbox'])->name('messages');
+    Route::post('/messages',     [MessageController::class, 'tenantSend'])->name('messages.send');
+    Route::post('/pay',          [MpesaController::class, 'tenantPay'])->name('pay');
+    Route::get('/pay/status',    [MpesaController::class, 'tenantPayStatus'])->name('pay.status');
+    Route::post('/maintenance',  [TenantPortalController::class, 'submitMaintenance'])->name('maintenance.store');
 });
  

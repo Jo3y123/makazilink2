@@ -24,20 +24,25 @@
         </div>
 
         <div class="d-flex gap-2 mb-4 flex-wrap">
+            <a href="{{ route('invoices.edit', $invoice) }}"
+               class="btn btn-sm btn-outline-secondary"
+               style="border-radius:8px;font-size:.82rem">
+                <i class="bi bi-pencil me-1"></i>Edit
+            </a>
             <a href="{{ route('invoices.pdf', $invoice) }}"
-            class="btn btn-sm btn-outline-secondary"
-            style="border-radius:8px;font-size:.82rem">
+               class="btn btn-sm btn-outline-secondary"
+               style="border-radius:8px;font-size:.82rem">
                 <i class="bi bi-file-pdf me-1"></i>Download PDF
             </a>
             <a href="{{ route('payments.create') }}?invoice_id={{ $invoice->id }}"
-            class="btn btn-sm btn-outline-secondary"
-            style="border-radius:8px;font-size:.82rem">
+               class="btn btn-sm btn-outline-secondary"
+               style="border-radius:8px;font-size:.82rem">
                 <i class="bi bi-cash-coin me-1"></i>Record Payment
             </a>
             @if($invoice->balance > 0)
             <a href="{{ route('mpesa.push', $invoice) }}"
-            class="btn btn-sm"
-            style="background:#15803d;color:#fff;border-radius:8px;font-size:.82rem;padding:6px 16px">
+               class="btn btn-sm"
+               style="background:#15803d;color:#fff;border-radius:8px;font-size:.82rem;padding:6px 16px">
                 <i class="bi bi-phone me-1"></i>Request M-Pesa
             </a>
             @endif
@@ -65,25 +70,27 @@
                     </div>
                 </div>
 
-                <div class="row g-3 mb-4">
-                    <div class="col-6">
-                        <div style="font-size:.7rem;color:#6c757d;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Billed To</div>
-                        <div style="font-weight:700;color:#1a1a2e">{{ $invoice->tenant->user->name }}</div>
-                        <div style="font-size:.82rem;color:#6c757d">{{ $invoice->tenant->user->email }}</div>
-                        <div style="font-size:.82rem;color:#6c757d">{{ $invoice->tenant->user->phone }}</div>
-                    </div>
-                    <div class="col-6 text-end">
-                        <div style="font-size:.7rem;color:#6c757d;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Period</div>
-                        <div style="font-size:.85rem;color:#1a1a2e">
-                            {{ $invoice->period_start->format('d M Y') }} —
-                            {{ $invoice->period_end->format('d M Y') }}
-                        </div>
-                        <div style="font-size:.7rem;color:#6c757d;margin-top:8px">Due Date</div>
-                        <div style="font-size:.85rem;font-weight:600;color:#1a1a2e">
-                            {{ $invoice->due_date->format('d M Y') }}
-                        </div>
-                    </div>
-                </div>
+                <table style="width:100%;margin-bottom:24px;border-collapse:collapse">
+                    <tr>
+                        <td style="vertical-align:top;width:50%">
+                            <div style="font-size:.7rem;color:#6c757d;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Billed To</div>
+                            <div style="font-weight:700;color:#1a1a2e">{{ $invoice->tenant->user->name }}</div>
+                            <div style="font-size:.82rem;color:#6c757d">{{ $invoice->tenant->user->email }}</div>
+                            <div style="font-size:.82rem;color:#6c757d">{{ $invoice->tenant->user->phone }}</div>
+                        </td>
+                        <td style="vertical-align:top;width:50%">
+                            <div style="font-size:.7rem;color:#6c757d;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Billing Period</div>
+                            <div style="font-size:.85rem;color:#1a1a2e">
+                                {{ $invoice->period_start->format('d M Y') }} —
+                                {{ $invoice->period_end->format('d M Y') }}
+                            </div>
+                            <div style="font-size:.7rem;color:#6c757d;margin-top:8px">Due Date</div>
+                            <div style="font-size:.85rem;font-weight:600;color:#1a1a2e">
+                                {{ $invoice->due_date->format('d M Y') }}
+                            </div>
+                        </td>
+                    </tr>
+                </table>
 
                 <div class="p-3 mb-4" style="background:#f8fafc;border-radius:8px">
                     <div style="font-size:.78rem;color:#6c757d">

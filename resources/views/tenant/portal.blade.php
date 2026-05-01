@@ -335,6 +335,90 @@
             <i class="bi bi-tools" style="background:#fff7ed;color:#c2410c"></i>
             My Maintenance Requests
         </div>
+
+        @if(session('success'))
+            <div style="background:#dcfce7;border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:.82rem;color:#15803d">
+                <i class="bi bi-check-circle me-2"></i>{{ session('success') }}
+            </div>
+        @endif
+
+        @if(session('error'))
+            <div style="background:#fee2e2;border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:.82rem;color:#b91c1c">
+                <i class="bi bi-exclamation-circle me-2"></i>{{ session('error') }}
+            </div>
+        @endif
+
+        {{-- Report Issue Button --}}
+        <button onclick="document.getElementById('maintenanceForm').style.display='block';this.style.display='none'"
+                style="width:100%;background:#fff7ed;border:1.5px solid #fed7aa;color:#c2410c;border-radius:8px;padding:10px;font-size:.85rem;font-weight:600;cursor:pointer;margin-bottom:16px;font-family:'Plus Jakarta Sans',sans-serif">
+            <i class="bi bi-plus-circle me-2"></i>Report a Maintenance Issue
+        </button>
+
+        {{-- Maintenance Form --}}
+        <div id="maintenanceForm" style="display:none;background:#fff7ed;border-radius:10px;padding:16px;margin-bottom:16px;border:1px solid #fed7aa">
+            <div style="font-size:.85rem;font-weight:700;color:#c2410c;margin-bottom:12px">
+                <i class="bi bi-tools me-2"></i>Report an Issue
+            </div>
+            <form action="{{ route('tenant.maintenance.store') }}" method="POST">
+                @csrf
+                <div class="mb-3">
+                    <label style="font-size:.78rem;font-weight:600;color:#374151;display:block;margin-bottom:4px">
+                        Issue Title <span style="color:#b91c1c">*</span>
+                    </label>
+                    <input type="text" name="title" class="form-control"
+                           placeholder="e.g. Leaking pipe in bathroom"
+                           style="font-size:.82rem;border-radius:8px" required>
+                </div>
+                <div class="mb-3">
+                    <label style="font-size:.78rem;font-weight:600;color:#374151;display:block;margin-bottom:4px">
+                        Description
+                    </label>
+                    <textarea name="description" class="form-control" rows="3"
+                              placeholder="Describe the issue in detail..."
+                              style="font-size:.82rem;border-radius:8px"></textarea>
+                </div>
+                <div class="row g-2 mb-3">
+                    <div class="col-6">
+                        <label style="font-size:.78rem;font-weight:600;color:#374151;display:block;margin-bottom:4px">
+                            Category <span style="color:#b91c1c">*</span>
+                        </label>
+                        <select name="category" class="form-select"
+                                style="font-size:.82rem;border-radius:8px" required>
+                            <option value="plumbing">Plumbing</option>
+                            <option value="electrical">Electrical</option>
+                            <option value="general" selected>General</option>
+                            <option value="structural">Structural</option>
+                            <option value="appliance">Appliance</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div class="col-6">
+                        <label style="font-size:.78rem;font-weight:600;color:#374151;display:block;margin-bottom:4px">
+                            Priority <span style="color:#b91c1c">*</span>
+                        </label>
+                        <select name="priority" class="form-select"
+                                style="font-size:.82rem;border-radius:8px" required>
+                            <option value="low">Low</option>
+                            <option value="normal" selected>Normal</option>
+                            <option value="high">High</option>
+                            <option value="urgent">Urgent</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="d-flex gap-2">
+                    <button type="submit"
+                            style="background:#c2410c;color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:.85rem;font-weight:600;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif">
+                        <i class="bi bi-send me-1"></i>Submit Request
+                    </button>
+                    <button type="button"
+                            onclick="document.getElementById('maintenanceForm').style.display='none';document.querySelector('[onclick*=maintenanceForm]').style.display='block'"
+                            style="background:none;border:1.5px solid #e9ecef;border-radius:8px;padding:9px 16px;font-size:.85rem;color:#6c757d;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+
         @if($maintenanceRequests->isEmpty())
             <div class="empty-state"><i class="bi bi-tools fs-4 d-block mb-2"></i>No maintenance requests submitted</div>
         @else
@@ -345,6 +429,7 @@
                     <div style="font-size:.75rem;color:#6c757d">
                         {{ $req->created_at->format('d M Y') }}
                         · {{ ucfirst(str_replace('_', ' ', $req->category ?? 'general')) }}
+                        · {{ ucfirst($req->priority) }} priority
                     </div>
                 </div>
                 @if(in_array($req->status, ['resolved', 'closed']))

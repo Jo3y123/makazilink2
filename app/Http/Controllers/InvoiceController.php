@@ -162,4 +162,48 @@ class InvoiceController extends Controller
         return redirect()->route('invoices.index')
             ->with('success', "{$count} invoice(s) deleted successfully.");
     }
+
+    public function edit(Invoice $invoice)
+{
+    $invoice->load('tenant.user', 'unit.property', 'lease');
+    return view('invoices.edit', compact('invoice'));
+}
+
+public function update(Request $request, Invoice $invoice)
+{
+    $request->validate([
+        'rent_amount'    => 'required|numeric|min:0',
+        'water_amount'   => 'nullable|numeric|min:0',
+        'garbage_amount' => 'nullable|numeric|min:0',
+        'other_amount'   => 'nullable|numeric|min:0',
+        'due_date'       => 'required|date',
+        'period_start'   => 'required|date',
+        'period_end'     => 'required|date|after:period_start',
+        'notes'          => 'nullable|string|max:500',
+    ]);
+
+    $rent    = (float) $request->rent_amount;
+    $water   = (float) ($request->water_amount   ?? 0);
+    $garbage = (float) ($request->garbage_amount ?? 0);
+    $other   = (float) ($request->other_amount   ?? 0);
+    $total   = $rent + $water + $garbage + $other;
+    $balance = $total - (float) $invoice->amount_paid;
+
+    $invoice->update([
+        'rent_amount'    => $rent,
+        'water_amount'   => $water,
+        'garbage_amount' => $garbage,
+        'other_amount'   => $other,
+        'total_amount'   => $total,
+        'balance'        => $balance,
+        'due_date'       => $request->due_date,
+        'period_start'   => $request->period_start,
+        'period_end'     => $request->period_end,
+        'notes'          => $request->notes,
+        'status'         => $balance <= 0 ? 'paid' : $invoice->status,
+    ]);
+
+    return redirect()->route('invoices.show', $invoice)
+        ->with('success', 'Invoice updated successfully.');
+    }
 }
