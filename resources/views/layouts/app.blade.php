@@ -622,6 +622,10 @@
                class="nav-link {{ request()->routeIs('salaries.*') ? 'active' : '' }}">
                 <i class="bi bi-people"></i> Salaries
             </a>
+            <a href="{{ route('deposits.index') }}"
+               class="nav-link {{ request()->routeIs('deposits.*') ? 'active' : '' }}">
+                <i class="bi bi-safe"></i> Deposits
+            </a>
             <a href="{{ route('reports.index') }}"
                class="nav-link {{ request()->routeIs('reports.index') ? 'active' : '' }}">
                 <i class="bi bi-bar-chart-line"></i> Reports

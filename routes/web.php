@@ -24,6 +24,7 @@ use App\Http\Controllers\SubscriptionController;
 use App\Http\Controllers\RenewalController;
 use App\Http\Controllers\ExportController;
 use App\Http\Controllers\SalaryController;
+use App\Http\Controllers\DepositController;
  
 // Auth routes (guests only)
 Route::middleware('guest')->group(function () {
@@ -152,6 +153,15 @@ Route::middleware(['auth', 'role:admin,agent,accountant,caretaker'])->group(func
     // Messages unread count
     Route::get('/messages/unread', [MessageController::class, 'unreadCount'])->name('messages.unread');
  
+    // Deposits
+    Route::middleware('role:admin,accountant')->prefix('deposits')->name('deposits.')->group(function () {
+        Route::get('/',                [DepositController::class, 'index'])->name('index');
+        Route::post('/',               [DepositController::class, 'store'])->name('store');
+        Route::get('/{deposit}/edit',  [DepositController::class, 'edit'])->name('edit');
+        Route::put('/{deposit}',       [DepositController::class, 'update'])->name('update');
+        Route::delete('/{deposit}',    [DepositController::class, 'destroy'])->name('destroy');
+    });
+
     // Salaries
     Route::middleware('role:admin,accountant')->prefix('salaries')->name('salaries.')->group(function () {
         Route::get('/',              [SalaryController::class, 'index'])->name('index');

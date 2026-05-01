@@ -441,7 +441,68 @@
             @endforeach
         @endif
     </div>
- 
+    
+    {{-- Deposit --}}
+    @if($lease)
+    @php $deposit = \App\Models\Deposit::where('lease_id', $lease->id)->first(); @endphp
+    @if($deposit)
+    <div class="portal-card">
+        <div class="card-title">
+            <i class="bi bi-safe" style="background:#e8f5ee;color:#1a7a4a"></i>
+            My Security Deposit
+        </div>
+        <div class="info-row">
+            <span class="info-label">Amount Expected</span>
+            <span class="info-value">KES {{ number_format($deposit->amount_expected) }}</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Amount Paid</span>
+            <span class="info-value" style="color:#15803d">KES {{ number_format($deposit->amount_received) }}</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Status</span>
+            <span class="info-value">
+                @if($deposit->status === 'received')
+                    <span class="badge-paid">Received in Full</span>
+                @elseif($deposit->status === 'partial')
+                    <span class="badge-partial">Partial</span>
+                @else
+                    <span class="badge-overdue">Pending</span>
+                @endif
+            </span>
+        </div>
+        @if($deposit->deduction_amount > 0)
+        <div class="info-row">
+            <span class="info-label">Deductions</span>
+            <span class="info-value" style="color:#b91c1c">
+                KES {{ number_format($deposit->deduction_amount) }}
+                @if($deposit->deduction_reason)
+                    <span style="font-size:.75rem;color:#6c757d;display:block">{{ $deposit->deduction_reason }}</span>
+                @endif
+            </span>
+        </div>
+        @endif
+        @if($deposit->refund_amount > 0)
+        <div class="info-row">
+            <span class="info-label">Refunded</span>
+            <span class="info-value" style="color:#b45309">
+                KES {{ number_format($deposit->refund_amount) }}
+                @if($deposit->refund_date)
+                    <span style="font-size:.75rem;color:#6c757d;display:block">on {{ $deposit->refund_date->format('d M Y') }}</span>
+                @endif
+            </span>
+        </div>
+        @endif
+        <div class="info-row">
+            <span class="info-label">Balance Held</span>
+            <span class="info-value" style="color:#1a7a4a;font-weight:700">
+                KES {{ number_format($deposit->balanceHeld()) }}
+            </span>
+        </div>
+    </div>
+    @endif
+    @endif
+
     {{-- Contact --}}
     @if($lease)
     <div class="portal-card">
