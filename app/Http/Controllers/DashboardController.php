@@ -103,7 +103,27 @@ class DashboardController extends Controller
             ];
         }
  
-        return view('dashboard', compact('stats', 'user', 'dateFrom', 'dateTo'));
+        // Check subscription warning
+$subscriptionWarning = null;
+if ($user->role === 'admin') {
+    try {
+        $subscription = \App\Models\Subscription::first();
+        if ($subscription && !$subscription->is_exempt) {
+            $days = $subscription->daysRemaining();
+            if ($days <= 7) {
+                $subscriptionWarning = [
+                    'days'       => $days,
+                    'expires_at' => $subscription->expires_at?->format('d M Y'),
+                    'plan'       => $subscription->planLabel(),
+                ];
+            }
+        }
+    } catch (\Exception $e) {
+        // subscription table may not exist
+    }
+}
+
+return view('dashboard', compact('stats', 'user', 'dateFrom', 'dateTo', 'subscriptionWarning'));
     }
 }
  

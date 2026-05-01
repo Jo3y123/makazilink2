@@ -1,33 +1,62 @@
 @extends('layouts.app')
- 
+
 @section('title', 'Dashboard')
 @section('page-title', 'Dashboard')
- 
+
 @section('content')
- 
+
 @php
     $alertDays = (int) \App\Models\Setting::get('lease_alert_days', 30);
     $currency  = \App\Models\Setting::get('currency', 'KES');
- 
+
     $expiringLeases = \App\Models\Lease::with('tenant.user', 'unit.property')
         ->where('status', 'active')
         ->whereNotNull('end_date')
         ->whereDate('end_date', '<=', now()->addDays($alertDays))
         ->get();
- 
+
     $arrearsInvoices = \App\Models\Invoice::with('tenant.user', 'unit.property')
-    ->whereIn('status', ['draft', 'sent', 'overdue', 'partial'])
-    ->where('balance', '>', 0)
-    ->orderByDesc('balance')
-    ->get();
+        ->whereIn('status', ['draft', 'sent', 'overdue', 'partial'])
+        ->where('balance', '>', 0)
+        ->orderByDesc('balance')
+        ->get();
 @endphp
- 
+
+{{-- Subscription Warning Banner --}}
+@if(isset($subscriptionWarning) && $subscriptionWarning)
+<div class="alert mb-4" style="background:{{ $subscriptionWarning['days'] <= 3 ? '#fee2e2' : '#dbeafe' }};border:1px solid {{ $subscriptionWarning['days'] <= 3 ? '#fecaca' : '#bfdbfe' }};border-radius:10px;padding:16px 20px">
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+        <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-credit-card-fill" style="color:{{ $subscriptionWarning['days'] <= 3 ? '#b91c1c' : '#1e40af' }};font-size:1rem"></i>
+            <span style="font-weight:700;color:{{ $subscriptionWarning['days'] <= 3 ? '#b91c1c' : '#1e40af' }};font-size:.9rem">
+                @if($subscriptionWarning['days'] === 0)
+                    ⚠️ Your subscription expires TODAY!
+                @elseif($subscriptionWarning['days'] === 1)
+                    ⚠️ Your subscription expires TOMORROW!
+                @else
+                    ⚠️ Your subscription expires in {{ $subscriptionWarning['days'] }} days
+                @endif
+            </span>
+        </div>
+        <a href="{{ route('subscription.index') }}"
+           style="background:#1a7a4a;color:#fff;border-radius:8px;padding:6px 16px;font-size:.8rem;font-weight:600;text-decoration:none">
+            Renew Now
+        </a>
+    </div>
+    <div style="font-size:.78rem;color:{{ $subscriptionWarning['days'] <= 3 ? '#b91c1c' : '#1e40af' }};margin-top:6px;padding-left:24px">
+        Plan: {{ $subscriptionWarning['plan'] }} —
+        Expires: {{ $subscriptionWarning['expires_at'] }}
+    </div>
+</div>
+@endif
+
+{{-- Lease Expiry Warning --}}
 @if($expiringLeases->count() > 0)
 <div class="alert mb-4" style="background:#fef3c7;border:1px solid #fde68a;border-radius:10px;padding:16px 20px">
     <div class="d-flex align-items-center gap-2 mb-2">
         <i class="bi bi-exclamation-triangle-fill" style="color:#b45309;font-size:1rem"></i>
         <span style="font-weight:700;color:#b45309;font-size:.9rem">
-            {{ $expiringLeases->count() }} lease{{ $expiringLeases->count() > 1 ? 's' : '' }} expiring within {{ $alertDays }} days
+            {{ $expiringLeases->count() }} tenant lease{{ $expiringLeases->count() > 1 ? 's' : '' }} expiring within {{ $alertDays }} days
         </span>
     </div>
     @foreach($expiringLeases as $lease)
@@ -45,7 +74,7 @@
     @endforeach
 </div>
 @endif
- 
+
 {{-- Header with date filter --}}
 <div class="d-flex align-items-start justify-content-between mb-4 flex-wrap gap-3">
     <div>
@@ -57,7 +86,7 @@
             {{ now()->format('l, d F Y') }} &mdash; Here is your property overview
         </p>
     </div>
- 
+
     @hasrole(['admin', 'accountant'])
     <form method="GET" action="{{ route('dashboard') }}"
           class="d-flex align-items-center gap-2 flex-wrap">
@@ -81,10 +110,10 @@
     </form>
     @endhasrole
 </div>
- 
+
 @if(auth()->user()->hasRole(['admin', 'agent', 'accountant', 'caretaker']))
 <div class="row g-3 mb-4">
- 
+
     @hasrole(['admin', 'agent'])
     <div class="col-6 col-md-3">
         <div class="stat-card">
@@ -100,7 +129,7 @@
         </div>
     </div>
     @endhasrole
- 
+
     <div class="col-6 col-md-3">
         <div class="stat-card">
             <div class="d-flex align-items-start justify-content-between">
@@ -114,7 +143,7 @@
             </div>
         </div>
     </div>
- 
+
     <div class="col-6 col-md-3">
         <div class="stat-card">
             <div class="d-flex align-items-start justify-content-between">
@@ -128,7 +157,7 @@
             </div>
         </div>
     </div>
- 
+
     <div class="col-6 col-md-3">
         <div class="stat-card">
             <div class="d-flex align-items-start justify-content-between">
@@ -142,7 +171,7 @@
             </div>
         </div>
     </div>
- 
+
     @hasrole(['admin', 'accountant'])
     <div class="col-6 col-md-3">
         <div class="stat-card">
@@ -164,7 +193,7 @@
             </div>
         </div>
     </div>
- 
+
     <div class="col-6 col-md-3" style="cursor:pointer" onclick="document.getElementById('arrearsModal').style.display='flex'">
         <div class="stat-card" style="transition:box-shadow .2s"
              onmouseover="this.style.boxShadow='0 4px 20px rgba(185,28,28,.15)'"
@@ -184,7 +213,7 @@
         </div>
     </div>
     @endhasrole
- 
+
     @hasrole(['admin', 'caretaker'])
     <div class="col-6 col-md-3">
         <div class="stat-card">
@@ -199,12 +228,12 @@
             </div>
         </div>
     </div>
- 
+
     <div class="col-6 col-md-3">
         <div class="stat-card">
             <div class="d-flex align-items-start justify-content-between">
                 <div>
-                    <div class="stat-label">Expiring Soon</div>
+                    <div class="stat-label">Leases Expiring</div>
                     <div class="stat-value">{{ $stats['expiring_leases'] }}</div>
                 </div>
                 <div class="stat-icon" style="background:#fce7f3;color:#9d174d">
@@ -214,10 +243,10 @@
         </div>
     </div>
     @endhasrole
- 
+
 </div>
 @endif
- 
+
 @hasrole(['admin', 'accountant'])
 <div class="row g-3 mb-4">
     <div class="col-12 col-md-8">
@@ -241,7 +270,7 @@
         </div>
     </div>
 </div>
- 
+
 <div class="card border-0 shadow-sm" style="border-radius:12px">
     <div class="card-body p-4">
         <p style="font-size:.85rem;font-weight:700;color:#1a1a2e;margin-bottom:16px">
@@ -292,7 +321,7 @@
     </div>
 </div>
 @endhasrole
- 
+
 @hasrole(['caretaker'])
 <div class="row g-3 mb-4">
     <div class="col-12 col-md-6">
@@ -380,7 +409,7 @@
     </div>
 </div>
 @endhasrole
- 
+
 {{-- Arrears Modal --}}
 @hasrole(['admin', 'accountant'])
 <div id="arrearsModal"
@@ -450,16 +479,16 @@
     </div>
 </div>
 @endhasrole
- 
+
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 @php
-    $months = [];
+    $months  = [];
     $amounts = [];
     for ($i = 5; $i >= 0; $i--) {
-        $month = now()->subMonths($i);
-        $months[] = $month->format('M Y');
+        $month     = now()->subMonths($i);
+        $months[]  = $month->format('M Y');
         $amounts[] = \App\Models\Payment::whereMonth('payment_date', $month->month)
             ->whereYear('payment_date', $month->year)
             ->where('status', 'confirmed')
@@ -495,7 +524,7 @@ if (revenueCtx) {
         }
     });
 }
- 
+
 const occupancyCtx = document.getElementById('occupancyChart');
 if (occupancyCtx) {
     new Chart(occupancyCtx, {
@@ -521,6 +550,5 @@ if (occupancyCtx) {
 }
 </script>
 @endpush
- 
+
 @endsection
- 

@@ -8,24 +8,24 @@ use Carbon\Carbon;
 class Subscription extends Model
 {
     protected $fillable = [
-    'client_name',
-    'client_email',
-    'client_phone',
-    'plan',
-    'status',
-    'trial_ends_at',
-    'expires_at',
-    'max_units',
-    'monthly_fee',
-    'notes',
-    'is_exempt',
+        'client_name',
+        'client_email',
+        'client_phone',
+        'plan',
+        'status',
+        'trial_ends_at',
+        'expires_at',
+        'max_units',
+        'monthly_fee',
+        'notes',
+        'is_exempt',
     ];
 
     protected $casts = [
-    'trial_ends_at' => 'date',
-    'expires_at'    => 'date',
-    'monthly_fee'   => 'decimal:2',
-    'is_exempt'     => 'boolean',
+        'trial_ends_at' => 'date',
+        'expires_at'    => 'date',
+        'monthly_fee'   => 'decimal:2',
+        'is_exempt'     => 'boolean',
     ];
 
     public function isActive(): bool
@@ -49,11 +49,11 @@ class Subscription extends Model
     public function daysRemaining(): int
     {
         if ($this->status === 'trial' && $this->trial_ends_at) {
-            return max(0, now()->diffInDays($this->trial_ends_at, false));
+            return max(0, (int) now()->diffInDays($this->trial_ends_at, false));
         }
 
         if ($this->status === 'active' && $this->expires_at) {
-            return max(0, now()->diffInDays($this->expires_at, false));
+            return max(0, (int) now()->diffInDays($this->expires_at, false));
         }
 
         return 0;
@@ -68,5 +68,10 @@ class Subscription extends Model
             'enterprise' => 'Enterprise (unlimited)',
             default      => ucfirst($this->plan),
         };
+    }
+
+    public function monthlyFeeByTenants(int $tenantCount): float
+    {
+        return $tenantCount * 100;
     }
 }
