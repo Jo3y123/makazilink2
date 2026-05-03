@@ -45,7 +45,8 @@ class RenewalController extends Controller
         $plan        = $request->plan;
         $amount      = $this->planPrices[$plan];
         $companyName = Setting::get('company_name', 'MakaziLink v2');
-        $paybill     = Setting::get('mpesa_shortcode', '522522');
+        $paybill     = Setting::get('my_paybill', Setting::get('mpesa_shortcode', '522522'));
+        $paybillType = Setting::get('my_paybill_type', 'paybill');
         $account     = strtoupper(str_replace(' ', '', $companyName));
 
         return view('renewal.instructions', compact(

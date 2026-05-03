@@ -1,7 +1,7 @@
 <?php
- 
+
 namespace App\Http\Controllers;
- 
+
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Property;
@@ -12,19 +12,48 @@ use App\Models\Payment;
 use App\Models\Invoice;
 use App\Models\MaintenanceRequest;
 use App\Models\Setting;
- 
+
 class DashboardController extends Controller
 {
     public function index(Request $request)
     {
         $user      = Auth::user();
+        if ($user->role === 'superadmin') {
+            $subscription   = \App\Models\Subscription::first();
+            $tenantCount    = \App\Models\Tenant::count();
+            $calculatedFee  = $tenantCount * 100;
+            $currency       = Setting::get('currency', 'KES');
+            $renewalHistory    = \App\Models\RenewalHistory::latest()->take(10)->get();
+            $adminNotes        = Setting::get('superadmin_notes', '');
+            $myPaybill         = Setting::get('my_paybill', '');
+            $myPaybillType     = Setting::get('my_paybill_type', 'paybill');
+            $systemVersion     = Setting::get('system_version', '1.0.0');
+        return view('dashboard-superadmin', compact(
+            'subscription', 'tenantCount', 'calculatedFee',
+            'currency', 'user', 'renewalHistory', 'adminNotes',
+            'myPaybill', 'myPaybillType', 'systemVersion'
+        ));
+        }
         $alertDays = (int) Setting::get('lease_alert_days', 30);
- 
+
         // Date filter — defaults to current month
         $dateFrom = $request->input('date_from', now()->startOfMonth()->format('Y-m-d'));
         $dateTo   = $request->input('date_to', now()->endOfMonth()->format('Y-m-d'));
- 
-        if ($user->role === 'admin') {
+        // Superadmin gets their own dashboard
+        if ($user->role === 'superadmin') {
+            $subscription   = \App\Models\Subscription::first();
+            $tenantCount    = \App\Models\Tenant::count();
+            $calculatedFee  = $tenantCount * 100;
+            $currency       = Setting::get('currency', 'KES');
+            $renewalHistory = \App\Models\RenewalHistory::latest()->take(10)->get();
+            $adminNotes     = Setting::get('superadmin_notes', '');
+            return view('dashboard-superadmin', compact(
+                'subscription', 'tenantCount', 'calculatedFee',
+                'currency', 'user', 'renewalHistory', 'adminNotes'
+            ));
+        }
+
+        if (in_array($user->role, ['admin', 'superadmin'])) {
             $stats = [
                 'total_properties' => Property::count(),
                 'total_units'      => Unit::count(),
@@ -41,7 +70,7 @@ class DashboardController extends Controller
                                         ->whereDate('end_date', '<=', now()->addDays($alertDays))
                                         ->count(),
             ];
- 
+
         } elseif ($user->role === 'caretaker') {
             $stats = [
                 'total_properties' => Property::count(),
@@ -57,7 +86,7 @@ class DashboardController extends Controller
                                         ->whereDate('end_date', '<=', now()->addDays($alertDays))
                                         ->count(),
             ];
- 
+
         } elseif ($user->role === 'accountant') {
             $stats = [
                 'total_properties' => Property::count(),
@@ -75,7 +104,7 @@ class DashboardController extends Controller
                                         ->whereDate('end_date', '<=', now()->addDays($alertDays))
                                         ->count(),
             ];
- 
+
         } else {
             // agent
             $stats = [
@@ -102,28 +131,27 @@ class DashboardController extends Controller
                                         ->count(),
             ];
         }
- 
-        // Check subscription warning
-$subscriptionWarning = null;
-if ($user->role === 'admin') {
-    try {
-        $subscription = \App\Models\Subscription::first();
-        if ($subscription && !$subscription->is_exempt) {
-            $days = $subscription->daysRemaining();
-            if ($days <= 7) {
-                $subscriptionWarning = [
-                    'days'       => $days,
-                    'expires_at' => $subscription->expires_at?->format('d M Y'),
-                    'plan'       => $subscription->planLabel(),
-                ];
+
+        // Check subscription warning — only for regular admin not superadmin
+        $subscriptionWarning = null;
+        if ($user->role === 'admin') {
+            try {
+                $subscription = \App\Models\Subscription::first();
+                if ($subscription && !$subscription->is_exempt) {
+                    $days = $subscription->daysRemaining();
+                    if ($days <= 7) {
+                        $subscriptionWarning = [
+                            'days'       => $days,
+                            'expires_at' => $subscription->expires_at?->format('d M Y'),
+                            'plan'       => $subscription->planLabel(),
+                        ];
+                    }
+                }
+            } catch (\Exception $e) {
+                // subscription table may not exist
             }
         }
-    } catch (\Exception $e) {
-        // subscription table may not exist
-    }
-}
 
-return view('dashboard', compact('stats', 'user', 'dateFrom', 'dateTo', 'subscriptionWarning'));
+        return view('dashboard', compact('stats', 'user', 'dateFrom', 'dateTo', 'subscriptionWarning'));
     }
 }
- 

@@ -20,10 +20,12 @@
         ->where('balance', '>', 0)
         ->orderByDesc('balance')
         ->get();
+
+    $role = auth()->user()->role;
 @endphp
 
-{{-- Subscription Warning Banner --}}
-@if(isset($subscriptionWarning) && $subscriptionWarning)
+{{-- Subscription Warning Banner — regular admin only --}}
+@if(isset($subscriptionWarning) && $subscriptionWarning && $role !== 'superadmin')
 <div class="alert mb-4" style="background:{{ $subscriptionWarning['days'] <= 3 ? '#fee2e2' : '#dbeafe' }};border:1px solid {{ $subscriptionWarning['days'] <= 3 ? '#fecaca' : '#bfdbfe' }};border-radius:10px;padding:16px 20px">
     <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
         <div class="d-flex align-items-center gap-2">
@@ -50,8 +52,8 @@
 </div>
 @endif
 
-{{-- Lease Expiry Warning --}}
-@if($expiringLeases->count() > 0)
+{{-- Lease Expiry Warning — not for superadmin --}}
+@if($expiringLeases->count() > 0 && $role !== 'superadmin')
 <div class="alert mb-4" style="background:#fef3c7;border:1px solid #fde68a;border-radius:10px;padding:16px 20px">
     <div class="d-flex align-items-center gap-2 mb-2">
         <i class="bi bi-exclamation-triangle-fill" style="color:#b45309;font-size:1rem"></i>
@@ -87,7 +89,7 @@
         </p>
     </div>
 
-    @hasrole(['admin', 'accountant'])
+    @if(in_array($role, ['admin', 'accountant', 'superadmin']))
     <form method="GET" action="{{ route('dashboard') }}"
           class="d-flex align-items-center gap-2 flex-wrap">
         <div class="d-flex align-items-center gap-2"
@@ -108,13 +110,13 @@
             Reset
         </a>
     </form>
-    @endhasrole
+    @endif
 </div>
 
-@if(auth()->user()->hasRole(['admin', 'agent', 'accountant', 'caretaker']))
+@if(in_array($role, ['admin', 'agent', 'accountant', 'caretaker', 'superadmin']))
 <div class="row g-3 mb-4">
 
-    @hasrole(['admin', 'agent'])
+    @if(in_array($role, ['admin', 'agent', 'superadmin']))
     <div class="col-6 col-md-3">
         <div class="stat-card">
             <div class="d-flex align-items-start justify-content-between">
@@ -128,7 +130,7 @@
             </div>
         </div>
     </div>
-    @endhasrole
+    @endif
 
     <div class="col-6 col-md-3">
         <div class="stat-card">
@@ -172,7 +174,7 @@
         </div>
     </div>
 
-    @hasrole(['admin', 'accountant'])
+    @if(in_array($role, ['admin', 'accountant', 'superadmin']))
     <div class="col-6 col-md-3">
         <div class="stat-card">
             <div class="d-flex align-items-start justify-content-between">
@@ -212,9 +214,9 @@
             </div>
         </div>
     </div>
-    @endhasrole
+    @endif
 
-    @hasrole(['admin', 'caretaker'])
+    @if(in_array($role, ['admin', 'caretaker', 'superadmin']))
     <div class="col-6 col-md-3">
         <div class="stat-card">
             <div class="d-flex align-items-start justify-content-between">
@@ -242,12 +244,12 @@
             </div>
         </div>
     </div>
-    @endhasrole
+    @endif
 
 </div>
 @endif
 
-@hasrole(['admin', 'accountant'])
+@if(in_array($role, ['admin', 'accountant', 'superadmin']))
 <div class="row g-3 mb-4">
     <div class="col-12 col-md-8">
         <div class="card border-0 shadow-sm" style="border-radius:12px">
@@ -320,9 +322,9 @@
         @endif
     </div>
 </div>
-@endhasrole
+@endif
 
-@hasrole(['caretaker'])
+@if($role === 'caretaker')
 <div class="row g-3 mb-4">
     <div class="col-12 col-md-6">
         <div class="card border-0 shadow-sm" style="border-radius:12px">
@@ -408,10 +410,10 @@
         </div>
     </div>
 </div>
-@endhasrole
+@endif
 
 {{-- Arrears Modal --}}
-@hasrole(['admin', 'accountant'])
+@if(in_array($role, ['admin', 'accountant', 'superadmin']))
 <div id="arrearsModal"
      style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:9000;align-items:center;justify-content:center"
      onclick="if(event.target===this) this.style.display='none'">
@@ -478,7 +480,7 @@
         </div>
     </div>
 </div>
-@endhasrole
+@endif
 
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>

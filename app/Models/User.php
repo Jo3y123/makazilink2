@@ -35,7 +35,12 @@ class User extends Authenticatable
 
     public function isAdmin(): bool
     {
-        return $this->role === 'admin';
+        return in_array($this->role, ['admin', 'superadmin']);
+    }
+
+    public function isSuperAdmin(): bool
+    {
+        return $this->role === 'superadmin';
     }
 
     public function isAgent(): bool
@@ -60,10 +65,16 @@ class User extends Authenticatable
 
     public function hasRole(string|array $roles): bool
     {
-        if (is_string($roles)) {
-            return $this->role === $roles;
-        }
-        return in_array($this->role, $roles);
+    // Superadmin has all roles
+    if ($this->role === 'superadmin') {
+        return true;
+    }
+
+    if (is_string($roles)) {
+        return $this->role === $roles;
+    }
+
+    return in_array($this->role, $roles);
     }
 
     public function properties()

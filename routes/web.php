@@ -57,6 +57,9 @@ Route::middleware(['auth', 'role:admin,agent,accountant,caretaker'])->group(func
         Route::post('/',         [SubscriptionController::class, 'store'])->name('store');
         Route::post('/activate', [SubscriptionController::class, 'activate'])->name('activate');
         Route::post('/suspend',  [SubscriptionController::class, 'suspend'])->name('suspend');
+        Route::post('/notes',    [SubscriptionController::class, 'saveNotes'])->name('notes');
+        Route::post('/password', [SubscriptionController::class, 'changePassword'])->name('password');
+        Route::post('/settings', [SubscriptionController::class, 'saveSettings'])->name('settings');
     });
  
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');

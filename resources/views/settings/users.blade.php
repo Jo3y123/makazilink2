@@ -59,6 +59,7 @@
                     </td>
                     <td class="py-3">{{ $user->created_at->format('d M Y') }}</td>
                     <td class="py-3">
+                        <td class="py-3">
                         <div class="d-flex gap-2">
                             <a href="{{ route('settings.users.edit', $user) }}"
                                class="btn btn-sm btn-outline-secondary"
@@ -77,6 +78,7 @@
                             </form>
                             @endif
                         </div>
+                    </td>
                     </td>
                 </tr>
                 @endforeach

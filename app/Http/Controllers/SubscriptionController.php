@@ -21,9 +21,17 @@ class SubscriptionController extends Controller
     // Admin — view subscription status
     public function index()
     {
-        $subscription = Subscription::first();
-        $unitCount    = Unit::count();
-        return view('subscription.index', compact('subscription', 'unitCount'));
+    $subscription = Subscription::first();
+    $unitCount    = Unit::count();
+    $tenantCount  = \App\Models\Tenant::count();
+    $currency     = Setting::get('currency', 'KES');
+
+    // Calculate fee based on tenant count
+    $calculatedFee = $tenantCount * 100;
+
+    return view('subscription.index', compact(
+        'subscription', 'unitCount', 'tenantCount', 'currency', 'calculatedFee'
+    ));
     }
 
     // Admin — create subscription
@@ -65,31 +73,46 @@ class SubscriptionController extends Controller
     // Activate subscription — extend by 30 days
     public function activate(Request $request)
     {
-        $request->validate([
-            'days' => 'required|integer|min:1|max:365',
-        ]);
-
+    // Handle exempt only toggle
+    if ($request->has('exempt_only')) {
         $subscription = Subscription::first();
-
-        if (!$subscription) {
-            return back()->with('error', 'No subscription found.');
+        if ($subscription) {
+            $subscription->update([
+                'is_exempt' => $request->boolean('is_exempt'),
+            ]);
         }
+        return redirect()->route('dashboard')
+            ->with('success', 'Exempt status updated.');
+    }
+
+    // ... rest of the activate code below
 
         $from = $subscription->expires_at && $subscription->expires_at->isFuture()
     ? $subscription->expires_at
     : now();
 
-    $subscription->update([
-        'status'     => 'active',
-        'expires_at' => $from->addDays((int) $request->days),
-    ]);
+    $activatedFrom = $from->copy();
+$activatedTo   = $from->copy()->addDays((int) $request->days);
 
-        return redirect()->route('subscription.index')
-            ->with('success', "Subscription activated for {$request->days} days.");
-    }
+$subscription->update([
+    'status'     => 'active',
+    'expires_at' => $activatedTo,
+]);
 
-    // Suspend subscription
-    public function suspend()
+// Record renewal history
+\App\Models\RenewalHistory::create([
+    'days_added'     => (int) $request->days,
+    'activated_from' => $activatedFrom,
+    'activated_to'   => $activatedTo,
+    'activated_by'   => auth()->user()->name,
+    'method'         => 'manual',
+]);
+
+        return redirect()->route('dashboard')
+            ->with('success', 'Subscription activated for ' . $request->days . ' days.');
+        }
+
+        public function suspend()
     {
         $subscription = Subscription::first();
 
@@ -99,5 +122,54 @@ class SubscriptionController extends Controller
 
         return redirect()->route('subscription.index')
             ->with('success', 'Subscription suspended.');
+    }
+
+    public function saveNotes(Request $request)
+{
+    $request->validate([
+        'notes' => 'nullable|string|max:1000',
+    ]);
+
+    Setting::set('superadmin_notes', $request->notes ?? '');
+
+    return redirect()->route('dashboard')
+        ->with('success', 'Notes saved successfully.');
+}
+
+    public function changePassword(Request $request)
+    {
+        $request->validate([
+            'current_password' => 'required|string',
+            'new_password'     => 'required|string|min:8|confirmed',
+        ]);
+
+        $user = auth()->user();
+
+        if (!\Illuminate\Support\Facades\Hash::check($request->current_password, $user->password)) {
+            return back()->withErrors(['current_password' => 'Current password is incorrect.']);
+        }
+
+        $user->update([
+            'password' => \Illuminate\Support\Facades\Hash::make($request->new_password),
+        ]);
+
+        return redirect()->route('dashboard')
+            ->with('success', 'Password changed successfully.');
+    }
+
+    public function saveSettings(Request $request)
+    {
+    $request->validate([
+        'my_paybill'      => 'nullable|string|max:20',
+        'my_paybill_type' => 'required|in:paybill,till,phone',
+        'system_version'  => 'nullable|string|max:20',
+    ]);
+
+    Setting::set('my_paybill',      $request->my_paybill ?? '');
+    Setting::set('my_paybill_type', $request->my_paybill_type);
+    Setting::set('system_version',  $request->system_version ?? '1.0.0');
+
+    return redirect()->route('dashboard')
+        ->with('success', 'Settings saved successfully.');
     }
 }
