@@ -15,6 +15,7 @@ class RenewalController extends Controller
         'growth'     => 5000,
         'pro'        => 8000,
         'enterprise' => 15000,
+        'tenant'     => 0, // calculated dynamically
     ];
 
     // Days per plan
@@ -23,34 +24,42 @@ class RenewalController extends Controller
         'growth'     => 30,
         'pro'        => 30,
         'enterprise' => 30,
+        'tenant'     => 30,
     ];
 
     // Step 1 — Show plan selection
     public function index()
     {
-        $subscription = Subscription::first();
-        $companyName  = Setting::get('company_name', 'MakaziLink v2');
-        $phone        = Setting::get('company_phone', '');
+        $subscription  = Subscription::first();
+        $companyName   = Setting::get('company_name', 'MakaziLink v2');
+        $phone         = Setting::get('company_phone', '');
+        $tenantCount   = \App\Models\Tenant::count();
+        $calculatedFee = $tenantCount * 100;
 
-        return view('renewal.index', compact('subscription', 'companyName', 'phone'));
+        return view('renewal.index', compact(
+            'subscription', 'companyName', 'phone', 'tenantCount', 'calculatedFee'
+        ));
     }
 
     // Step 2 — Show payment instructions for selected plan
     public function instructions(Request $request)
     {
         $request->validate([
-            'plan' => 'required|in:starter,growth,pro,enterprise',
+            'plan' => 'required|in:starter,growth,pro,enterprise,tenant',
         ]);
 
-        $plan        = $request->plan;
-        $amount      = $this->planPrices[$plan];
+        $plan   = $request->plan;
+        $amount = $plan === 'tenant'
+            ? (int) $request->input('calculated_fee', \App\Models\Tenant::count() * 100)
+            : $this->planPrices[$plan];
+
         $companyName = Setting::get('company_name', 'MakaziLink v2');
         $paybill     = Setting::get('my_paybill', Setting::get('mpesa_shortcode', '522522'));
         $paybillType = Setting::get('my_paybill_type', 'paybill');
         $account     = strtoupper(str_replace(' ', '', $companyName));
 
         return view('renewal.instructions', compact(
-            'plan', 'amount', 'companyName', 'paybill', 'account'
+            'plan', 'amount', 'companyName', 'paybill', 'account', 'paybillType'
         ));
     }
 
@@ -58,19 +67,22 @@ class RenewalController extends Controller
     public function verify(Request $request)
     {
         $request->validate([
-            'plan'         => 'required|in:starter,growth,pro,enterprise',
+            'plan'         => 'required|in:starter,growth,pro,enterprise,tenant',
             'mpesa_code'   => 'required|string|min:8|max:15',
             'phone_number' => 'required|string|min:10|max:15',
         ]);
 
-        $plan       = $request->plan;
-        $code       = strtoupper(trim($request->mpesa_code));
-        $phone      = $this->formatPhone($request->phone_number);
-        $amount     = $this->planPrices[$plan];
-        $days       = $this->planDays[$plan];
-        $companyName = Setting::get('company_name', 'MakaziLink v2');
-        $paybill    = Setting::get('mpesa_shortcode', '522522');
-        $passkey    = Setting::get('mpesa_passkey', '');
+        $plan   = $request->plan;
+        $code   = strtoupper(trim($request->mpesa_code));
+        $phone  = $this->formatPhone($request->phone_number);
+        $amount = $plan === 'tenant'
+            ? (int) $request->input('amount', \App\Models\Tenant::count() * 100)
+            : $this->planPrices[$plan];
+        $days   = $this->planDays[$plan] ?? 30;
+
+        $companyName    = Setting::get('company_name', 'MakaziLink v2');
+        $paybill        = Setting::get('my_paybill', Setting::get('mpesa_shortcode', '522522'));
+        $passkey        = Setting::get('mpesa_passkey', '');
         $consumerKey    = Setting::get('mpesa_consumer_key', '');
         $consumerSecret = Setting::get('mpesa_consumer_secret', '');
         $environment    = Setting::get('mpesa_environment', 'sandbox');
@@ -108,9 +120,21 @@ class RenewalController extends Controller
             ? $subscription->expires_at
             : now();
 
+        $activatedFrom = $from->copy();
+        $activatedTo   = $from->copy()->addDays($days);
+
         $subscription->update([
             'status'     => 'active',
-            'expires_at' => $from->addDays($days),
+            'expires_at' => $activatedTo,
+        ]);
+
+        // Record renewal history
+        \App\Models\RenewalHistory::create([
+            'days_added'     => $days,
+            'activated_from' => $activatedFrom,
+            'activated_to'   => $activatedTo,
+            'activated_by'   => 'Client (self-service)',
+            'method'         => 'mpesa',
         ]);
 
         // Mark code as used
@@ -158,8 +182,7 @@ class RenewalController extends Controller
         }
 
         try {
-            // Get access token
-            $baseUrl = 'https://api.safaricom.co.ke';
+            $baseUrl  = 'https://api.safaricom.co.ke';
             $tokenUrl = $baseUrl . '/oauth/v1/generate?grant_type=client_credentials';
 
             $tokenResponse = \Illuminate\Support\Facades\Http::withBasicAuth($consumerKey, $consumerSecret)
@@ -170,12 +193,9 @@ class RenewalController extends Controller
             }
 
             $accessToken = $tokenResponse->json()['access_token'];
-
-            // Query transaction
-            $queryUrl = $baseUrl . '/mpesa/transactionstatus/v1/query';
-
-            $timestamp  = now()->format('YmdHis');
-            $password   = base64_encode($paybill . $passkey . $timestamp);
+            $queryUrl    = $baseUrl . '/mpesa/transactionstatus/v1/query';
+            $timestamp   = now()->format('YmdHis');
+            $password    = base64_encode($paybill . $passkey . $timestamp);
 
             $queryResponse = \Illuminate\Support\Facades\Http::withToken($accessToken)
                 ->post($queryUrl, [
@@ -208,7 +228,6 @@ class RenewalController extends Controller
             ];
 
         } catch (\Exception $e) {
-            // If verification fails due to network issues allow manual review
             return [
                 'success' => false,
                 'message' => 'Verification service unavailable. Please contact support with your M-Pesa code.',
@@ -223,7 +242,7 @@ class RenewalController extends Controller
             $adminPhone  = Setting::get('company_phone', '');
             $companyName = Setting::get('company_name', 'MakaziLink v2');
             $expiryDate  = $subscription->fresh()->expires_at->format('d M Y');
-            $planLabel   = ucfirst($plan);
+            $planLabel   = $plan === 'tenant' ? 'Per Tenant' : ucfirst($plan);
 
             if (!$adminPhone) return;
 
@@ -241,9 +260,6 @@ class RenewalController extends Controller
                 $adminPhone = '254' . substr($adminPhone, 1);
             }
 
-            $whatsappUrl = 'https://wa.me/' . $adminPhone . '?text=' . urlencode($message);
-
-            // Log the notification
             \Illuminate\Support\Facades\Log::info('Subscription renewal notification', [
                 'code'   => $code,
                 'phone'  => $phone,
