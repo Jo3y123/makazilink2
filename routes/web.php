@@ -148,9 +148,10 @@ Route::middleware(['auth', 'role:admin,agent,accountant,caretaker'])->group(func
  
     // Messages — Admin and Caretaker
     Route::middleware('role:admin,caretaker')->prefix('messages')->name('messages.')->group(function () {
-        Route::get('/',                [MessageController::class, 'index'])->name('index');
-        Route::get('/{tenant}',        [MessageController::class, 'show'])->name('show');
-        Route::post('/{tenant}/reply', [MessageController::class, 'reply'])->name('reply');
+    Route::get('/',                [MessageController::class, 'index'])->name('index');
+    Route::get('/{tenant}',        [MessageController::class, 'show'])->name('show');
+    Route::post('/{tenant}/reply', [MessageController::class, 'reply'])->name('reply');
+    Route::delete('/{message}',    [MessageController::class, 'destroy'])->name('destroy');
     });
  
     // Messages unread count
@@ -218,6 +219,7 @@ Route::middleware(['auth', 'role:tenant'])->prefix('portal')->name('tenant.')->g
     Route::get('/',              [TenantPortalController::class, 'index'])->name('portal');
     Route::get('/messages',      [MessageController::class, 'tenantInbox'])->name('messages');
     Route::post('/messages',     [MessageController::class, 'tenantSend'])->name('messages.send');
+    Route::delete('/messages/{message}', [MessageController::class, 'tenantDestroyMessage'])->name('messages.destroy');
     Route::post('/pay',          [MpesaController::class, 'tenantPay'])->name('pay');
     Route::get('/pay/status',    [MpesaController::class, 'tenantPayStatus'])->name('pay.status');
     Route::post('/maintenance',  [TenantPortalController::class, 'submitMaintenance'])->name('maintenance.store');

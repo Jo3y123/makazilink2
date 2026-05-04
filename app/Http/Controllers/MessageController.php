@@ -159,4 +159,36 @@ class MessageController extends Controller
 
         return response()->json(['count' => $count]);
     }
+
+    public function destroy(Message $message)
+{
+    // Delete file if exists
+    if ($message->file_path) {
+        Storage::disk('public')->delete($message->file_path);
+    }
+
+    $message->delete();
+
+    return back()->with('success', 'Message deleted.');
+}
+
+public function tenantDestroyMessage(Request $request, Message $message)
+{
+    $user   = auth()->user();
+    $tenant = $user->tenant;
+
+    // Tenant can only delete their own messages
+    if ($message->sender_id !== $user->id) {
+        return back()->with('error', 'You can only delete your own messages.');
+    }
+
+    // Delete file if exists
+    if ($message->file_path) {
+        Storage::disk('public')->delete($message->file_path);
+    }
+
+    $message->delete();
+
+    return back()->with('success', 'Message deleted.');
+}
 }

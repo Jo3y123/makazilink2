@@ -77,8 +77,20 @@
                                     @endif
                                 @endif
                             </div>
-                            <div style="font-size:.68rem;color:#9ca3af;margin-top:3px;text-align:{{ $isMe ? 'right' : 'left' }};padding:0 4px">
-                                {{ $message->created_at->format('d M, h:i A') }}
+                            <div style="font-size:.68rem;color:#9ca3af;margin-top:3px;text-align:{{ $isMe ? 'right' : 'left' }};padding:0 4px;display:flex;align-items:center;justify-content:{{ $isMe ? 'flex-end' : 'flex-start' }};gap:8px">
+                                <span>{{ $message->created_at->format('d M, h:i A') }}</span>
+                                <form action="{{ route('messages.destroy', $message) }}" method="POST"
+                                      onsubmit="return confirm('Delete this message?')">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit"
+                                            style="background:none;border:none;color:#e74c3c;cursor:pointer;padding:0;font-size:.68rem;opacity:.6"
+                                            onmouseover="this.style.opacity='1'"
+                                            onmouseout="this.style.opacity='.6'"
+                                            title="Delete message">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
                             </div>
                         </div>
                     </div>
