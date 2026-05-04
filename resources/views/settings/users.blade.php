@@ -59,26 +59,28 @@
                     </td>
                     <td class="py-3">{{ $user->created_at->format('d M Y') }}</td>
                     <td class="py-3">
-                        <td class="py-3">
                         <div class="d-flex gap-2">
-                            <a href="{{ route('settings.users.edit', $user) }}"
-                               class="btn btn-sm btn-outline-secondary"
-                               style="font-size:.75rem;border-radius:6px;padding:4px 12px">
-                                <i class="bi bi-pencil"></i>
-                            </a>
-                            @if($user->id !== auth()->id())
-                            <form action="{{ route('settings.users.destroy', $user) }}" method="POST"
-                                  onsubmit="return confirm('Delete {{ $user->name }}?')">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="btn btn-sm btn-outline-danger"
-                                        style="font-size:.75rem;border-radius:6px;padding:4px 12px">
-                                    <i class="bi bi-trash"></i>
-                                </button>
-                            </form>
+                            @if($user->role !== 'superadmin')
+                                <a href="{{ route('settings.users.edit', $user) }}"
+                                   class="btn btn-sm btn-outline-secondary"
+                                   style="font-size:.75rem;border-radius:6px;padding:4px 12px">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                @if($user->id !== auth()->id())
+                                <form action="{{ route('settings.users.destroy', $user) }}" method="POST"
+                                      onsubmit="return confirm('Delete {{ $user->name }}?')">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="btn btn-sm btn-outline-danger"
+                                            style="font-size:.75rem;border-radius:6px;padding:4px 12px">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                                @endif
+                            @else
+                                <span style="font-size:.75rem;color:#9ca3af;font-style:italic">Protected</span>
                             @endif
                         </div>
-                    </td>
                     </td>
                 </tr>
                 @endforeach

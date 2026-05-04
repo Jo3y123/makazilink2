@@ -9,15 +9,11 @@ return new class extends Migration
 {
     public function up(): void
     {
-        // SQLite does not support modifying check constraints
-        // We recreate the column without the constraint
-        DB::statement('PRAGMA foreign_keys=off;');
-
-        Schema::table('users', function (Blueprint $table) {
-            $table->string('role')->default('tenant')->change();
-        });
-
-        DB::statement('PRAGMA foreign_keys=on;');
+        // MySQL does not have CHECK constraints on role column
+        // so we just need to modify the column to allow superadmin
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement("ALTER TABLE users MODIFY COLUMN role VARCHAR(255) DEFAULT 'tenant'");
+        }
     }
 
     public function down(): void
