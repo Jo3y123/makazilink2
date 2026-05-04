@@ -11,14 +11,18 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-        $middleware->alias([
-            'role'         => \App\Http\Middleware\RoleMiddleware::class,
-            'subscription' => \App\Http\Middleware\CheckSubscription::class,
-        ]);
-        $middleware->web(append: [
-            \App\Http\Middleware\CheckSubscription::class,
-        ]);
-})
+    $middleware->alias([
+        'role'         => \App\Http\Middleware\RoleMiddleware::class,
+        'subscription' => \App\Http\Middleware\CheckSubscription::class,
+    ]);
+    $middleware->web(append: [
+        \App\Http\Middleware\CheckSubscription::class,
+    ]);
+    $middleware->validateCsrfTokens(except: [
+        'mpesa/callback',
+        'mpesa/*',
+    ]);
+    })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
     })->create();

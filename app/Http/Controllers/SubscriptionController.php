@@ -21,6 +21,12 @@ class SubscriptionController extends Controller
     // Admin — view subscription status
     public function index()
     {
+    // Superadmin manages subscription from their dashboard
+    if (auth()->user()->role === 'superadmin') {
+        return redirect()->route('dashboard');
+    }
+
+    // rest of the method...
     $subscription = Subscription::first();
     $unitCount    = Unit::count();
     $tenantCount  = \App\Models\Tenant::count();
