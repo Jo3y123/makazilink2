@@ -17,29 +17,45 @@ class AuthController extends Controller
 
     public function login(Request $request)
     {
-        $credentials = $request->validate([
-            'email'    => ['required', 'email'],
-            'password' => ['required'],
-        ]);
+    $credentials = $request->validate([
+    'email'    => ['required', 'email', 'max:255'],
+    'password' => ['required', 'string', 'max:255'],
+    ]);
 
-        if (Auth::attempt($credentials, $request->boolean('remember'))) {
-            $request->session()->regenerate();
+    // Rate limiting — max 5 attempts per minute per IP
+    $key = 'login_attempts_' . $request->ip();
+    $attempts = cache()->get($key, 0);
 
-            $user = Auth::user();
+    if ($attempts >= 5) {
+        $seconds = cache()->getTimeToLive($key) ?? 60;
+        return back()->withErrors([
+            'email' => 'Too many login attempts. Please wait ' . ceil($seconds / 60) . ' minute(s) before trying again.',
+        ])->onlyInput('email');
+    }
 
-            if (!$user->is_active) {
-                Auth::logout();
-                return back()->withErrors([
-                    'email' => 'Your account has been deactivated.',
-                ]);
-            }
+    if (Auth::attempt($credentials, $request->boolean('remember'))) {
+        // Clear failed attempts on success
+        cache()->forget($key);
+        $request->session()->regenerate();
 
-            return $this->redirectByRole($user->role);
+        $user = Auth::user();
+
+        if (!$user->is_active) {
+            Auth::logout();
+            return back()->withErrors([
+                'email' => 'Your account has been deactivated.',
+            ]);
         }
 
-        return back()->withErrors([
-            'email' => 'These credentials do not match our records.',
-        ])->onlyInput('email');
+        return $this->redirectByRole($user->role);
+    }
+
+    // Increment failed attempts
+    cache()->put($key, $attempts + 1, now()->addMinutes(1));
+
+    return back()->withErrors([
+        'email' => 'These credentials do not match our records.',
+    ])->onlyInput('email');
     }
 
     public function logout(Request $request)
