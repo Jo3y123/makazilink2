@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class RenewalHistory extends Model
 {
-    protected $table = 'renewal_history';
+    protected $table = 'renewal_histories';
 
     protected $fillable = [
         'days_added',

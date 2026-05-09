@@ -74,6 +74,22 @@ class PaymentController extends Controller
             $invoice->save();
         }
 
+        // Send SMS confirmation if enabled
+        if (\App\Models\Setting::get('sms_on_payment', '0') === '1') {
+            $tenant = Tenant::find($request->tenant_id);
+            $phone  = $tenant->user->phone ?? '';
+            $name   = $tenant->user->name ?? '';
+            if ($phone) {
+                $sms = new \App\Services\SmsService();
+                $sms->sendPaymentConfirmation(
+                    $phone,
+                    $name,
+                    $payment->receipt_number,
+                    $request->amount
+                );
+            }
+        }
+
         return redirect()->route('payments.index')
             ->with('success', 'Payment recorded. Receipt: ' . $payment->receipt_number);
     }

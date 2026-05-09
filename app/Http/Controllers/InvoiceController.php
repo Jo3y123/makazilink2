@@ -13,11 +13,17 @@ class InvoiceController extends Controller
 {
     public function index()
     {
-        $invoices = Invoice::with('tenant.user', 'unit.property')
-            ->latest()
-            ->get();
+    $activeTenants = Tenant::with('user', 'activeLease.unit.property')
+        ->whereHas('activeLease')
+        ->latest()
+        ->get();
 
-        return view('invoices.index', compact('invoices'));
+    $vacatedTenants = Tenant::with('user', 'activeLease.unit.property')
+        ->whereDoesntHave('activeLease')
+        ->latest()
+        ->get();
+
+    return view('tenants.index', compact('activeTenants', 'vacatedTenants'));
     }
 
     public function create()
@@ -68,6 +74,23 @@ class InvoiceController extends Controller
             'notes'          => $request->notes,
             'status'         => 'draft',
         ]);
+
+        // Send SMS notification if enabled
+        if (Setting::get('sms_on_invoice', '0') === '1') {
+            $tenant = $lease->tenant;
+            $phone  = $tenant->user->phone ?? '';
+            $name   = $tenant->user->name ?? '';
+            if ($phone) {
+                $sms = new \App\Services\SmsService();
+                $sms->sendInvoiceNotification(
+                    $phone,
+                    $name,
+                    Invoice::generateNumber(),
+                    $total,
+                    \Carbon\Carbon::parse($request->due_date)->format('d M Y')
+                );
+            }
+        }
 
         return redirect()->route('invoices.index')
             ->with('success', 'Invoice created successfully.');

@@ -87,13 +87,16 @@ Route::middleware(['auth', 'role:admin,agent,accountant,caretaker'])->group(func
     });
  
     Route::middleware('role:admin,agent,caretaker')->prefix('tenants')->name('tenants.')->group(function () {
-        Route::get('/',                   [TenantController::class, 'index'])->name('index');
-        Route::get('/create',             [TenantController::class, 'create'])->name('create');
-        Route::post('/',                  [TenantController::class, 'store'])->name('store');
-        Route::get('/{tenant}/edit',      [TenantController::class, 'edit'])->name('edit');
-        Route::put('/{tenant}',           [TenantController::class, 'update'])->name('update');
-        Route::delete('/{tenant}',        [TenantController::class, 'destroy'])->name('destroy');
-        Route::get('/{tenant}/statement', [TenantController::class, 'statement'])->name('statement');
+    Route::get('/',                    [TenantController::class, 'index'])->name('index');
+    Route::get('/create',              [TenantController::class, 'create'])->name('create');
+    Route::post('/',                   [TenantController::class, 'store'])->name('store');
+    Route::get('/quick-add',           [TenantController::class, 'quickAdd'])->name('quick-add');
+    Route::post('/quick-add',          [TenantController::class, 'quickStore'])->name('quick-store');
+    Route::get('/{tenant}/edit',       [TenantController::class, 'edit'])->name('edit');
+    Route::put('/{tenant}',            [TenantController::class, 'update'])->name('update');
+    Route::post('/{tenant}/vacate',    [TenantController::class, 'vacate'])->name('vacate');
+    Route::delete('/{tenant}',         [TenantController::class, 'destroy'])->name('destroy');
+    Route::get('/{tenant}/statement',  [TenantController::class, 'statement'])->name('statement');
     });
  
     Route::middleware('role:admin,agent')->prefix('leases')->name('leases.')->group(function () {

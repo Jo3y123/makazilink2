@@ -64,6 +64,15 @@ class SettingsController extends Controller
         ];
  
         return view('settings.index', compact('settings', 'stats'));
+
+        // SMS — Africa's Talking
+            'africastalking_username'  => Setting::get('africastalking_username', ''),
+            'africastalking_api_key'   => Setting::get('africastalking_api_key', ''),
+            'africastalking_sender_id' => Setting::get('africastalking_sender_id', 'MAKAZILINK'),
+            'sms_on_invoice'           => Setting::get('sms_on_invoice', '0'),
+            'sms_on_payment'           => Setting::get('sms_on_payment', '0'),
+            'sms_on_overdue'           => Setting::get('sms_on_overdue', '0'),
+            'sms_on_lease_expiry'      => Setting::get('sms_on_lease_expiry', '0'),
     }
  
     public function update(Request $request)
@@ -110,11 +119,24 @@ class SettingsController extends Controller
         'mpesa_shortcode'       => 'mpesa',
         'mpesa_passkey'         => 'mpesa',
         'mpesa_callback_url'    => 'mpesa',
+        'africastalking_username'  => 'sms',
+        'africastalking_api_key'   => 'sms',
+        'africastalking_sender_id' => 'sms',
+        'sms_on_invoice'           => 'sms',
+        'sms_on_payment'           => 'sms',
+        'sms_on_overdue'           => 'sms',
+        'sms_on_lease_expiry'      => 'sms',
     ];
 
     foreach ($groups as $key => $group) {
         Setting::set($key, $request->input($key, ''), $group);
     }
+
+    // Handle SMS checkboxes — unchecked checkboxes are not submitted
+    Setting::set('sms_on_invoice',     $request->has('sms_on_invoice') ? '1' : '0', 'sms');
+    Setting::set('sms_on_payment',     $request->has('sms_on_payment') ? '1' : '0', 'sms');
+    Setting::set('sms_on_overdue',     $request->has('sms_on_overdue') ? '1' : '0', 'sms');
+    Setting::set('sms_on_lease_expiry',$request->has('sms_on_lease_expiry') ? '1' : '0', 'sms');
 
     // Keep company_name in sync with system_name
     Setting::set('company_name', $request->input('system_name', ''), 'general');

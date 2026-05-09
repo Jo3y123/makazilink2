@@ -47,7 +47,6 @@
                 @endif
             </span>
         </div>
-        {{-- Quick activate --}}
         <form action="{{ route('subscription.activate') }}" method="POST" class="d-flex gap-2">
             @csrf
             <input type="hidden" name="days" value="30">
@@ -428,7 +427,7 @@
         <div style="font-size:3rem;color:#d1d5db"><i class="bi bi-credit-card"></i></div>
         <h3 style="font-size:1rem;font-weight:700;color:#1a1a2e;margin-top:12px">No Subscription Set Up</h3>
         <p class="text-muted" style="font-size:.82rem">
-            Go to Settings → Subscription to set up this client's subscription.
+            Set up this client's subscription to get started.
         </p>
         <a href="{{ route('subscription.index') }}" class="btn btn-sm"
            style="background:#1a7a4a;color:#fff;border-radius:8px;padding:8px 20px;font-size:.85rem;font-weight:600">
@@ -439,7 +438,8 @@
 
 @endif
 
-{{-- Edit Client Details Modal --}}
+{{-- Edit Client Details Modal — only shown when subscription exists --}}
+@if($subscription)
 <div class="modal fade" id="editClientModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content" style="border-radius:12px;border:none">
@@ -493,5 +493,6 @@
         </div>
     </div>
 </div>
+@endif
 
 @endsection

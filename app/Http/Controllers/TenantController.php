@@ -12,11 +12,17 @@ class TenantController extends Controller
 {
     public function index()
     {
-        $tenants = Tenant::with('user', 'activeLease.unit.property')
-            ->latest()
-            ->get();
+    $activeTenants = Tenant::with('user', 'activeLease.unit.property')
+        ->whereHas('activeLease')
+        ->latest()
+        ->get();
 
-        return view('tenants.index', compact('tenants'));
+    $vacatedTenants = Tenant::with('user', 'activeLease.unit.property')
+        ->whereDoesntHave('activeLease')
+        ->latest()
+        ->get();
+
+    return view('tenants.index', compact('activeTenants', 'vacatedTenants'));
     }
 
     public function create()
@@ -125,6 +131,107 @@ class TenantController extends Controller
     ));
 
     return $pdf->download('statement-' . str_replace(' ', '-', $tenant->user->name) . '.pdf');
+    }
+
+    public function quickAdd()
+{
+    $units = Unit::with('property')
+        ->where('status', 'vacant')
+        ->get();
+
+    return view('tenants.quick-add', compact('units'));
+}
+
+public function quickStore(Request $request)
+{
+    $request->validate([
+        'name'         => 'required|string|max:255',
+        'phone'        => 'required|string|max:20',
+        'email'        => 'nullable|email|unique:users,email',
+        'unit_id'      => 'required|exists:units,id',
+        'monthly_rent' => 'required|numeric|min:1',
+        'deposit_paid' => 'nullable|numeric|min:0',
+        'move_in_date' => 'required|date',
+        'notice_days'  => 'nullable|integer|min:1',
+    ]);
+
+    // Generate email if not provided
+    $email = $request->email ?? strtolower(str_replace(' ', '.', $request->name)) . '.' . time() . '@tenant.local';
+
+    // Create user account
+    $user = User::create([
+        'name'      => $request->name,
+        'email'     => $email,
+        'phone'     => $request->phone,
+        'password'  => Hash::make('password'),
+        'role'      => 'tenant',
+        'is_active' => true,
+    ]);
+
+    // Create tenant profile
+    $tenant = Tenant::create([
+        'user_id' => $user->id,
+    ]);
+
+    // Get unit
+    $unit = Unit::find($request->unit_id);
+
+    // Create month to month lease
+    $lease = \App\Models\Lease::create([
+        'tenant_id'    => $tenant->id,
+        'unit_id'      => $unit->id,
+        'monthly_rent' => $request->monthly_rent,
+        'deposit_paid' => $request->deposit_paid ?? 0,
+        'start_date'   => $request->move_in_date,
+        'end_date'     => null, // month to month
+        'notice_days'  => $request->notice_days ?? 30,
+        'status'       => 'active',
+    ]);
+
+    // Mark unit as occupied
+    $unit->update(['status' => 'occupied']);
+
+    // Record deposit if paid
+    if ($request->deposit_paid && $request->deposit_paid > 0) {
+        \App\Models\Deposit::create([
+            'tenant_id'       => $tenant->id,
+            'lease_id'        => $lease->id,
+            'amount_expected' => $request->deposit_paid,
+            'amount_received' => $request->deposit_paid,
+            'date_received'   => $request->move_in_date,
+            'status'          => 'received',
+            'recorded_by'     => auth()->id(),
+        ]);
+    }
+
+    return redirect()->route('tenants.index')
+        ->with('success', 'Tenant ' . $request->name . ' added successfully. Default password is: password');
+    }
+
+    public function vacate(Request $request, Tenant $tenant)
+    {
+    $request->validate([
+        'vacate_date'   => 'required|date',
+        'vacate_reason' => 'nullable|string|max:500',
+    ]);
+
+    // Terminate active lease
+    $lease = $tenant->activeLease;
+    if ($lease) {
+        $lease->update([
+            'status'   => 'terminated',
+            'end_date' => $request->vacate_date,
+        ]);
+
+        // Mark unit as vacant
+        $lease->unit->update(['status' => 'vacant']);
+    }
+
+    // Deactivate user account
+    $tenant->user->update(['is_active' => false]);
+
+    return redirect()->route('tenants.index')
+        ->with('success', $tenant->user->name . ' has been vacated successfully. Unit is now available.');
     }
 }
 

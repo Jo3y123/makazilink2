@@ -337,6 +337,125 @@
             </div>
         </div>
 
+        {{-- Africa's Talking SMS --}}
+        <div class="col-12">
+            <div class="card border-0 shadow-sm" style="border-radius:12px">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center gap-2 mb-4">
+                        <div style="width:36px;height:36px;background:#dcfce7;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#15803d">
+                            <i class="bi bi-chat-dots"></i>
+                        </div>
+                        <h3 style="font-size:.95rem;font-weight:700;color:#1a1a2e;margin:0">SMS — Africa's Talking</h3>
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-12 col-md-4">
+                            <label class="form-label" style="font-size:.8rem;font-weight:600;color:#374151">
+                                Username
+                            </label>
+                            <input type="text" name="africastalking_username" class="form-control"
+                                   value="{{ $settings['africastalking_username'] ?? '' }}"
+                                   placeholder="Your Africa's Talking username">
+                            <small class="text-muted" style="font-size:.72rem">
+                                Use <strong>sandbox</strong> for testing
+                            </small>
+                        </div>
+
+                        <div class="col-12 col-md-4">
+                            <label class="form-label" style="font-size:.8rem;font-weight:600;color:#374151">
+                                API Key
+                            </label>
+                            <input type="password" name="africastalking_api_key" class="form-control"
+                                   value="{{ $settings['africastalking_api_key'] ?? '' }}"
+                                   placeholder="Your API key">
+                            <small class="text-muted" style="font-size:.72rem">
+                                Found in Africa's Talking dashboard under Settings → API Key
+                            </small>
+                        </div>
+
+                        <div class="col-12 col-md-4">
+                            <label class="form-label" style="font-size:.8rem;font-weight:600;color:#374151">
+                                Sender ID
+                            </label>
+                            <input type="text" name="africastalking_sender_id" class="form-control"
+                                   value="{{ $settings['africastalking_sender_id'] ?? 'MAKAZILINK' }}"
+                                   placeholder="MAKAZILINK">
+                            <small class="text-muted" style="font-size:.72rem">
+                                Name shown on tenant's phone. Leave blank to use shortcode.
+                            </small>
+                        </div>
+
+                        <div class="col-12">
+                            <div class="row g-3">
+                                <div class="col-12 col-md-3">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox"
+                                               name="sms_on_invoice" value="1"
+                                               {{ ($settings['sms_on_invoice'] ?? '0') === '1' ? 'checked' : '' }}>
+                                        <label class="form-check-label" style="font-size:.82rem;font-weight:600">
+                                            SMS on Invoice Generated
+                                        </label>
+                                    </div>
+                                    <small class="text-muted d-block" style="font-size:.72rem;padding-left:44px">
+                                        Send SMS when invoice is created
+                                    </small>
+                                </div>
+                                <div class="col-12 col-md-3">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox"
+                                               name="sms_on_payment" value="1"
+                                               {{ ($settings['sms_on_payment'] ?? '0') === '1' ? 'checked' : '' }}>
+                                        <label class="form-check-label" style="font-size:.82rem;font-weight:600">
+                                            SMS on Payment Received
+                                        </label>
+                                    </div>
+                                    <small class="text-muted d-block" style="font-size:.72rem;padding-left:44px">
+                                        Send SMS when payment is confirmed
+                                    </small>
+                                </div>
+                                <div class="col-12 col-md-3">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox"
+                                               name="sms_on_overdue" value="1"
+                                               {{ ($settings['sms_on_overdue'] ?? '0') === '1' ? 'checked' : '' }}>
+                                        <label class="form-check-label" style="font-size:.82rem;font-weight:600">
+                                            SMS on Overdue
+                                        </label>
+                                    </div>
+                                    <small class="text-muted d-block" style="font-size:.72rem;padding-left:44px">
+                                        Send SMS when rent becomes overdue
+                                    </small>
+                                </div>
+                                <div class="col-12 col-md-3">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox"
+                                               name="sms_on_lease_expiry" value="1"
+                                               {{ ($settings['sms_on_lease_expiry'] ?? '0') === '1' ? 'checked' : '' }}>
+                                        <label class="form-check-label" style="font-size:.82rem;font-weight:600">
+                                            SMS on Lease Expiry
+                                        </label>
+                                    </div>
+                                    <small class="text-muted d-block" style="font-size:.72rem;padding-left:44px">
+                                        Send SMS when lease is expiring soon
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-12">
+                            <div class="alert alert-info mb-0" style="font-size:.8rem;border-radius:8px">
+                                <i class="bi bi-info-circle me-2"></i>
+                                <strong>Getting started:</strong> Sign up free at
+                                <a href="https://africastalking.com" target="_blank">africastalking.com</a>.
+                                Use username <strong>sandbox</strong> and your sandbox API key for testing.
+                                SMS costs approximately KES 1 per message on production.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         {{-- System Info --}}
         <div class="col-12">
             <div class="card border-0 shadow-sm" style="border-radius:12px">
