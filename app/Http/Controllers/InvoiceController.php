@@ -13,17 +13,11 @@ class InvoiceController extends Controller
 {
     public function index()
     {
-    $activeTenants = Tenant::with('user', 'activeLease.unit.property')
-        ->whereHas('activeLease')
+    $invoices = Invoice::with('tenant.user', 'unit.property')
         ->latest()
         ->get();
 
-    $vacatedTenants = Tenant::with('user', 'activeLease.unit.property')
-        ->whereDoesntHave('activeLease')
-        ->latest()
-        ->get();
-
-    return view('tenants.index', compact('activeTenants', 'vacatedTenants'));
+    return view('invoices.index', compact('invoices'));
     }
 
     public function create()

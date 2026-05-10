@@ -1,32 +1,28 @@
 @extends('layouts.app')
- 
+
 @section('title', 'Invoices')
 @section('page-title', 'Invoices')
- 
+
 @section('content')
- 
+
 <div class="d-flex align-items-center justify-content-between mb-4">
     <div>
-        <h2 class="mb-1" style="font-size:1.15rem;font-weight:700;color:#1a1a2e">All Invoices</h2>
-        <p class="text-muted mb-0" style="font-size:.82rem">Manage tenant invoices</p>
+        <h2 class="mb-1" style="font-size:1.15rem;font-weight:700;color:#1a1a2e">Invoices</h2>
+        <p class="text-muted mb-0" style="font-size:.82rem">Monthly rent and charges billing</p>
     </div>
-    <div class="d-flex gap-2 align-items-center">
-        {{-- Mass Delete Button — hidden until checkboxes selected --}}
+    <div class="d-flex gap-2 align-items-center flex-wrap">
         <button class="btn btn-sm btn-outline-danger"
                 id="massDeleteBtn"
                 style="display:none;border-radius:8px;font-size:.85rem;font-weight:600"
                 onclick="confirmMassDelete()">
             <i class="bi bi-trash me-1"></i> Delete Selected
-            <span id="selectedCountBadge"
-                  class="badge ms-1"
+            <span id="selectedCountBadge" class="badge ms-1"
                   style="background:#b91c1c;color:#fff">0</span>
         </button>
-        
         <a href="{{ route('export.invoices') }}" class="btn btn-sm btn-outline-secondary"
            style="border-radius:8px;font-size:.85rem;font-weight:600;">
-            <i class="bi bi-file-earmark-excel me-1"></i> Export Excel
+            <i class="bi bi-file-earmark-excel me-1"></i> Export
         </a>
-
         <button class="btn btn-sm btn-outline-secondary"
                 data-bs-toggle="modal" data-bs-target="#bulkModal"
                 style="border-radius:8px;font-size:.85rem;font-weight:600;">
@@ -38,7 +34,49 @@
         </a>
     </div>
 </div>
- 
+
+{{-- Summary Cards --}}
+@php
+    $totalInvoiced = $invoices->sum('total_amount');
+    $totalPaid     = $invoices->sum('amount_paid');
+    $totalBalance  = $invoices->sum('balance');
+    $overdueCount  = $invoices->where('status', 'overdue')->count();
+@endphp
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="stat-card">
+            <div class="stat-label">Total Invoiced</div>
+            <div class="stat-value" style="font-size:1.1rem">
+                KES {{ number_format($totalInvoiced) }}
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-card">
+            <div class="stat-label">Total Collected</div>
+            <div class="stat-value" style="font-size:1.1rem;color:#15803d">
+                KES {{ number_format($totalPaid) }}
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-card">
+            <div class="stat-label">Outstanding</div>
+            <div class="stat-value" style="font-size:1.1rem;color:#b91c1c">
+                KES {{ number_format($totalBalance) }}
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-card">
+            <div class="stat-label">Overdue</div>
+            <div class="stat-value" style="font-size:1.1rem;color:#b91c1c">
+                {{ $overdueCount }}
+            </div>
+        </div>
+    </div>
+</div>
+
 {{-- Bulk Generate Modal --}}
 <div class="modal fade" id="bulkModal" tabindex="-1">
     <div class="modal-dialog">
@@ -52,13 +90,12 @@
             <form action="{{ route('invoices.bulk') }}" method="POST">
                 @csrf
                 <div class="modal-body p-4">
- 
                     <div class="alert alert-info mb-4" style="font-size:.82rem;border-radius:8px">
                         <i class="bi bi-info-circle me-2"></i>
-                        This will create invoices for <strong>all active leases</strong> for the selected period.
-                        Tenants who already have an invoice for that period will be skipped.
+                        Generates invoices for <strong>all active tenants</strong> for the selected period.
+                        Water, garbage and service charges are pulled automatically from each unit.
+                        Tenants with existing invoices for that period are skipped.
                     </div>
- 
                     <div class="mb-3">
                         <label class="form-label" style="font-size:.8rem;font-weight:600;color:#374151">
                             Billing Period <span class="text-danger">*</span>
@@ -76,7 +113,6 @@
                             </div>
                         </div>
                     </div>
- 
                     <div class="mb-3">
                         <label class="form-label" style="font-size:.8rem;font-weight:600;color:#374151">
                             Due Date <span class="text-danger">*</span>
@@ -84,25 +120,21 @@
                         <input type="date" name="due_date" class="form-control"
                                value="{{ now()->addDays((int) \App\Models\Setting::get('invoice_due_days', 5))->format('Y-m-d') }}"
                                required>
-                        <small class="text-muted" style="font-size:.72rem">
-                            Default is {{ (int) \App\Models\Setting::get('invoice_due_days', 5) }} days from today (set in Settings)
-                        </small>
                     </div>
- 
                 </div>
                 <div class="modal-footer" style="border-top:1px solid #f0f0f0">
                     <button type="button" class="btn btn-sm btn-outline-secondary"
                             data-bs-dismiss="modal">Cancel</button>
                     <button type="submit" class="btn btn-sm"
                             style="background:#1a7a4a;color:#fff;border-radius:8px;padding:6px 20px;font-size:.85rem;font-weight:600;">
-                        <i class="bi bi-lightning me-1"></i> Generate All Invoices
+                        <i class="bi bi-lightning me-1"></i> Generate All
                     </button>
                 </div>
             </form>
         </div>
     </div>
 </div>
- 
+
 {{-- Hidden Mass Delete Form --}}
 <form id="massDeleteForm"
       action="{{ route('invoices.mass-destroy') }}"
@@ -112,16 +144,25 @@
     @method('DELETE')
     <div id="massDeleteIds"></div>
 </form>
- 
+
 @if($invoices->isEmpty())
     <div class="text-center py-5">
         <div style="font-size:3rem;color:#d1d5db"><i class="bi bi-receipt"></i></div>
         <h3 style="font-size:1rem;font-weight:700;color:#1a1a2e;margin-top:12px">No invoices yet</h3>
-        <p class="text-muted" style="font-size:.82rem">Click New Invoice to generate your first invoice</p>
-        <a href="{{ route('invoices.create') }}" class="btn btn-sm"
-           style="background:#1a7a4a;color:#fff;border-radius:8px;padding:8px 20px;font-size:.85rem;font-weight:600;">
-            <i class="bi bi-plus-lg me-1"></i> New Invoice
-        </a>
+        <p class="text-muted" style="font-size:.82rem">
+            Use Bulk Generate to create invoices for all active tenants at once
+        </p>
+        <div class="d-flex gap-2 justify-content-center">
+            <button class="btn btn-sm"
+                    data-bs-toggle="modal" data-bs-target="#bulkModal"
+                    style="background:#1a7a4a;color:#fff;border-radius:8px;padding:8px 20px;font-size:.85rem;font-weight:600;">
+                <i class="bi bi-lightning me-1"></i> Bulk Generate
+            </button>
+            <a href="{{ route('invoices.create') }}" class="btn btn-sm btn-outline-secondary"
+               style="border-radius:8px;padding:8px 20px;font-size:.85rem;font-weight:600;">
+                <i class="bi bi-plus-lg me-1"></i> Single Invoice
+            </a>
+        </div>
     </div>
 @else
     <div class="card border-0 shadow-sm" style="border-radius:12px">
@@ -130,19 +171,18 @@
                 <thead style="background:#f8fafc;font-size:.75rem;text-transform:uppercase;letter-spacing:.05em;color:#6c757d">
                     <tr>
                         <th class="px-4 py-3">
-                            <input type="checkbox"
-                                   id="selectAll"
-                                   class="form-check-input"
-                                   onchange="toggleSelectAll(this)"
-                                   style="cursor:pointer"
-                                   title="Select all">
+                            <input type="checkbox" id="selectAll" class="form-check-input"
+                                   onchange="toggleSelectAll(this)" style="cursor:pointer">
                         </th>
                         <th class="py-3">Invoice #</th>
                         <th class="py-3">Tenant</th>
-                        <th class="py-3">Unit</th>
-                        <th class="py-3">Total (KES)</th>
-                        <th class="py-3">Balance (KES)</th>
-                        <th class="py-3">Due Date</th>
+                        <th class="py-3">Period</th>
+                        <th class="py-3">Rent</th>
+                        <th class="py-3">Water</th>
+                        <th class="py-3">Other</th>
+                        <th class="py-3">Total</th>
+                        <th class="py-3">Balance</th>
+                        <th class="py-3">Due</th>
                         <th class="py-3">Status</th>
                         <th class="py-3">Actions</th>
                     </tr>
@@ -151,27 +191,55 @@
                     @foreach($invoices as $invoice)
                     <tr>
                         <td class="px-4 py-3">
-                            <input type="checkbox"
-                                   class="form-check-input invoice-checkbox"
+                            <input type="checkbox" class="form-check-input invoice-checkbox"
                                    value="{{ $invoice->id }}"
-                                   onchange="updateSelection()"
-                                   style="cursor:pointer">
+                                   onchange="updateSelection()" style="cursor:pointer">
                         </td>
                         <td class="py-3">
-                            <span style="font-weight:700;color:#1a1a2e">{{ $invoice->invoice_number }}</span>
+                            <a href="{{ route('invoices.show', $invoice) }}"
+                               style="font-weight:700;color:#1a7a4a;text-decoration:none">
+                                {{ $invoice->invoice_number }}
+                            </a>
                         </td>
-                        <td class="py-3">{{ $invoice->tenant->user->name }}</td>
                         <td class="py-3">
-                            {{ $invoice->unit->unit_number }}
-                            <span class="text-muted" style="font-size:.75rem"> — {{ $invoice->unit->property->name }}</span>
+                            <div style="font-weight:600;color:#1a1a2e">
+                                {{ $invoice->tenant->user->name }}
+                            </div>
+                            <div style="font-size:.72rem;color:#6c757d">
+                                {{ $invoice->unit->unit_number }} — {{ $invoice->unit->property->name }}
+                            </div>
                         </td>
-                        <td class="py-3">{{ number_format($invoice->total_amount) }}</td>
+                        <td class="py-3" style="font-size:.78rem;color:#6c757d;white-space:nowrap">
+                            {{ \Carbon\Carbon::parse($invoice->period_start)->format('d M') }}
+                            — {{ \Carbon\Carbon::parse($invoice->period_end)->format('d M Y') }}
+                        </td>
+                        <td class="py-3">{{ number_format($invoice->rent_amount) }}</td>
+                        <td class="py-3">
+                            @if($invoice->water_amount > 0)
+                                {{ number_format($invoice->water_amount) }}
+                            @else
+                                <span style="color:#d1d5db">—</span>
+                            @endif
+                        </td>
+                        <td class="py-3">
+                            @php $other = ($invoice->garbage_amount ?? 0) + ($invoice->other_amount ?? 0); @endphp
+                            @if($other > 0)
+                                {{ number_format($other) }}
+                            @else
+                                <span style="color:#d1d5db">—</span>
+                            @endif
+                        </td>
+                        <td class="py-3" style="font-weight:600">
+                            {{ number_format($invoice->total_amount) }}
+                        </td>
                         <td class="py-3">
                             <span style="color:{{ $invoice->balance > 0 ? '#b91c1c' : '#15803d' }};font-weight:600">
                                 {{ number_format($invoice->balance) }}
                             </span>
                         </td>
-                        <td class="py-3">{{ $invoice->due_date->format('d M Y') }}</td>
+                        <td class="py-3" style="font-size:.78rem;white-space:nowrap">
+                            {{ $invoice->due_date->format('d M Y') }}
+                        </td>
                         <td class="py-3">
                             @if($invoice->status === 'paid')
                                 <span class="badge" style="background:#dcfce7;color:#15803d;border-radius:20px;font-size:.7rem">Paid</span>
@@ -186,18 +254,32 @@
                             @endif
                         </td>
                         <td class="py-3">
-                            <div class="d-flex gap-2">
+                            <div class="d-flex gap-1">
                                 <a href="{{ route('invoices.show', $invoice) }}"
                                    class="btn btn-sm btn-outline-secondary"
-                                   style="font-size:.75rem;border-radius:6px;padding:4px 12px">
+                                   style="font-size:.75rem;border-radius:6px;padding:4px 10px"
+                                   title="View">
                                     <i class="bi bi-eye"></i>
                                 </a>
+                                <a href="{{ route('invoices.edit', $invoice) }}"
+                                   class="btn btn-sm btn-outline-secondary"
+                                   style="font-size:.75rem;border-radius:6px;padding:4px 10px"
+                                   title="Edit">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <a href="{{ route('invoices.pdf', $invoice) }}"
+                                   class="btn btn-sm btn-outline-secondary"
+                                   style="font-size:.75rem;border-radius:6px;padding:4px 10px"
+                                   title="PDF">
+                                    <i class="bi bi-file-pdf"></i>
+                                </a>
                                 <form action="{{ route('invoices.destroy', $invoice) }}" method="POST"
-                                      onsubmit="return confirm('Delete invoice {{ $invoice->invoice_number }}?')">
+                                      onsubmit="return confirm('Delete {{ $invoice->invoice_number }}?')">
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit" class="btn btn-sm btn-outline-danger"
-                                            style="font-size:.75rem;border-radius:6px;padding:4px 12px">
+                                            style="font-size:.75rem;border-radius:6px;padding:4px 10px"
+                                            title="Delete">
                                         <i class="bi bi-trash"></i>
                                     </button>
                                 </form>
@@ -210,7 +292,7 @@
         </div>
     </div>
 @endif
- 
+
 @push('scripts')
 <script>
 function toggleSelectAll(checkbox) {
@@ -219,7 +301,7 @@ function toggleSelectAll(checkbox) {
     });
     updateSelection();
 }
- 
+
 function updateSelection() {
     const checked   = document.querySelectorAll('.invoice-checkbox:checked');
     const total     = document.querySelectorAll('.invoice-checkbox').length;
@@ -227,24 +309,21 @@ function updateSelection() {
     const btn       = document.getElementById('massDeleteBtn');
     const badge     = document.getElementById('selectedCountBadge');
     const selectAll = document.getElementById('selectAll');
- 
-    badge.textContent          = count;
-    btn.style.display          = count > 0 ? 'inline-flex' : 'none';
-    selectAll.checked          = count === total && total > 0;
-    selectAll.indeterminate    = count > 0 && count < total;
+
+    badge.textContent       = count;
+    btn.style.display       = count > 0 ? 'inline-flex' : 'none';
+    selectAll.checked       = count === total && total > 0;
+    selectAll.indeterminate = count > 0 && count < total;
 }
- 
+
 function confirmMassDelete() {
     const checked = document.querySelectorAll('.invoice-checkbox:checked');
     const count   = checked.length;
- 
     if (count === 0) return;
- 
-    if (!confirm(`Are you sure you want to delete ${count} invoice(s)? This cannot be undone.`)) return;
- 
+    if (!confirm(`Delete ${count} invoice(s)? This cannot be undone.`)) return;
+
     const container = document.getElementById('massDeleteIds');
     container.innerHTML = '';
- 
     checked.forEach(cb => {
         const input = document.createElement('input');
         input.type  = 'hidden';
@@ -252,11 +331,9 @@ function confirmMassDelete() {
         input.value = cb.value;
         container.appendChild(input);
     });
- 
     document.getElementById('massDeleteForm').submit();
 }
 </script>
 @endpush
- 
+
 @endsection
- 

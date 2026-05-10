@@ -118,6 +118,16 @@
                                        style="font-size:.75rem;border-radius:6px;padding:4px 12px">
                                         <i class="bi bi-pencil"></i>
                                     </a>
+                                    <form action="{{ route('tenants.destroy', $tenant) }}" method="POST"
+                                          onsubmit="return confirm('Permanently delete {{ $tenant->user->name }}? This cannot be undone.')">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-sm btn-outline-danger"
+                                                style="font-size:.75rem;border-radius:6px;padding:4px 12px"
+                                                title="Delete permanently">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
                                     <button type="button"
                                             class="btn btn-sm btn-outline-warning"
                                             style="font-size:.75rem;border-radius:6px;padding:4px 12px"
