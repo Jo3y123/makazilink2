@@ -118,6 +118,49 @@
                                placeholder="e.g. WM-001">
                     </div>
 
+                    {{-- Monthly Charges --}}
+                    <div class="mb-3">
+                        <p style="font-size:.85rem;font-weight:700;color:#1a1a2e;margin-bottom:12px">
+                            <i class="bi bi-receipt me-2 text-success"></i>Monthly Charges
+                        </p>
+                        <div class="row g-3">
+                            <div class="col-12 col-md-4">
+                                <label class="form-label" style="font-size:.8rem;font-weight:600;color:#374151">
+                                    Water Charge (KES)
+                                </label>
+                                <input type="number" name="water_charge" class="form-control"
+                                       value="{{ old('water_charge', $unit->water_charge) }}" min="0" step="0.01">
+                                <small class="text-muted" style="font-size:.72rem">
+                                    Fixed monthly water charge. Leave 0 if metered.
+                                </small>
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <label class="form-label" style="font-size:.8rem;font-weight:600;color:#374151">
+                                    Garbage Charge (KES)
+                                </label>
+                                <input type="number" name="garbage_charge" class="form-control"
+                                       value="{{ old('garbage_charge', $unit->garbage_charge) }}" min="0" step="0.01">
+                                <small class="text-muted" style="font-size:.72rem">
+                                    Fixed monthly garbage collection fee.
+                                </small>
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <label class="form-label" style="font-size:.8rem;font-weight:600;color:#374151">
+                                    Service Charge (KES)
+                                </label>
+                                <input type="number" name="service_charge" class="form-control"
+                                       value="{{ old('service_charge', $unit->service_charge) }}" min="0" step="0.01">
+                                <small class="text-muted" style="font-size:.72rem">
+                                    Fixed monthly service/maintenance fee.
+                                </small>
+                            </div>
+                        </div>
+                        <div style="background:#f0fdf4;border-radius:8px;padding:10px 14px;margin-top:10px;font-size:.78rem;color:#15803d">
+                            <i class="bi bi-info-circle me-2"></i>
+                            These charges will automatically appear in invoices for this unit.
+                        </div>
+                    </div>
+
                     <div class="mb-3">
                         <label class="form-label" style="font-size:.8rem;font-weight:600;color:#374151">
                             Notes

@@ -32,7 +32,9 @@ class InvoiceController extends Controller
             ->where('status', 'active')
             ->get();
 
-        return view('invoices.create', compact('leases'));
+        $currency = \App\Models\Setting::get('currency', 'KES');
+
+        return view('invoices.create', compact('leases', 'currency'));
     }
 
     public function store(Request $request)
@@ -56,24 +58,56 @@ class InvoiceController extends Controller
         $other   = $request->other_amount   ?? 0;
         $total   = $rent + $water + $garbage + $other;
 
-        Invoice::create([
-            'invoice_number' => Invoice::generateNumber(),
-            'lease_id'       => $lease->id,
-            'tenant_id'      => $lease->tenant_id,
-            'unit_id'        => $lease->unit_id,
-            'rent_amount'    => $rent,
-            'water_amount'   => $water,
-            'garbage_amount' => $garbage,
-            'other_amount'   => $other,
-            'total_amount'   => $total,
-            'amount_paid'    => 0,
-            'balance'        => $total,
-            'due_date'       => $request->due_date,
-            'period_start'   => $request->period_start,
-            'period_end'     => $request->period_end,
-            'notes'          => $request->notes,
-            'status'         => 'draft',
-        ]);
+        $unit    = $lease->unit;
+                $water   = $unit->water_charge   ?? 0;
+                $garbage = $unit->garbage_charge  ?? 0;
+                $service = $unit->service_charge  ?? 0;
+
+                // Check for latest metered water reading this period
+                $waterReading = \App\Models\WaterReading::where('unit_id', $unit->id)
+                    ->whereMonth('reading_date', now()->month)
+                    ->whereYear('reading_date', now()->year)
+                    ->latest()
+                    ->first();
+
+                if ($waterReading && $waterReading->amount_charged > 0) {
+                    $water = $waterReading->amount_charged;
+                }
+
+                $rent  = $lease->monthly_rent;
+                $total = $rent + $water + $garbage + $service;
+
+                // Add late penalty if tenant has overdue balance
+                $latePenalty = 0;
+                $penalty     = (float) \App\Models\Setting::get('late_payment_penalty', 0);
+                if ($penalty > 0) {
+                    $hasOverdue = \App\Models\Invoice::where('tenant_id', $lease->tenant_id)
+                        ->where('status', 'overdue')
+                        ->exists();
+                    if ($hasOverdue) {
+                        $latePenalty = $penalty;
+                        $total      += $latePenalty;
+                    }
+                }
+
+                Invoice::create([
+                    'invoice_number' => Invoice::generateNumber(),
+                    'lease_id'       => $lease->id,
+                    'tenant_id'      => $lease->tenant_id,
+                    'unit_id'        => $lease->unit_id,
+                    'rent_amount'    => $rent,
+                    'water_amount'   => $water,
+                    'garbage_amount' => $garbage,
+                    'other_amount'   => $service + $latePenalty,
+                    'total_amount'   => $total,
+                    'amount_paid'    => 0,
+                    'balance'        => $total,
+                    'due_date'       => $request->due_date,
+                    'period_start'   => $request->period_start,
+                    'period_end'     => $request->period_end,
+                    'status'         => 'draft',
+                    'notes'          => \App\Models\Setting::get('invoice_notes', ''),
+                ]);
 
         // Send SMS notification if enabled
         if (Setting::get('sms_on_invoice', '0') === '1') {

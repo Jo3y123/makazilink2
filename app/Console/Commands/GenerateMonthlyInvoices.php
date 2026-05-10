@@ -37,18 +37,50 @@ class GenerateMonthlyInvoices extends Command
                 continue;
             }
 
+            $unit    = $lease->unit;
+            $water   = $unit->water_charge  ?? 0;
+            $garbage = $unit->garbage_charge ?? 0;
+            $service = $unit->service_charge ?? 0;
+
+            // Check for latest metered water reading this period
+            $waterReading = \App\Models\WaterReading::where('unit_id', $unit->id)
+                ->whereMonth('reading_date', now()->month)
+                ->whereYear('reading_date', now()->year)
+                ->latest()
+                ->first();
+
+            if ($waterReading && $waterReading->amount_charged > 0) {
+                $water = $waterReading->amount_charged;
+            }
+
+            $rent  = $lease->monthly_rent;
+            $total = $rent + $water + $garbage + $service;
+
+            // Add late penalty if tenant has overdue balance
+            $latePenalty = 0;
+            $penalty     = (float) Setting::get('late_payment_penalty', 0);
+            if ($penalty > 0) {
+                $hasOverdue = \App\Models\Invoice::where('tenant_id', $lease->tenant_id)
+                    ->where('status', 'overdue')
+                    ->exists();
+                if ($hasOverdue) {
+                    $latePenalty = $penalty;
+                    $total      += $latePenalty;
+                }
+            }
+
             Invoice::create([
                 'invoice_number' => Invoice::generateNumber(),
                 'lease_id'       => $lease->id,
                 'tenant_id'      => $lease->tenant_id,
                 'unit_id'        => $lease->unit_id,
-                'rent_amount'    => $lease->monthly_rent,
-                'water_amount'   => 0,
-                'garbage_amount' => 0,
-                'other_amount'   => 0,
-                'total_amount'   => $lease->monthly_rent,
+                'rent_amount'    => $rent,
+                'water_amount'   => $water,
+                'garbage_amount' => $garbage,
+                'other_amount'   => $service + $latePenalty,
+                'total_amount'   => $total,
                 'amount_paid'    => 0,
-                'balance'        => $lease->monthly_rent,
+                'balance'        => $total,
                 'due_date'       => $dueDate,
                 'period_start'   => $periodStart,
                 'period_end'     => $periodEnd,

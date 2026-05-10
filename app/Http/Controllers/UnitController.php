@@ -58,6 +58,9 @@ class UnitController extends Controller
             'floor_number'       => $request->floor_number ?? 0,
             'has_water_meter'    => $request->boolean('has_water_meter'),
             'water_meter_number' => $request->water_meter_number,
+            'water_charge'       => $request->water_charge ?? 0,
+            'garbage_charge'     => $request->garbage_charge ?? 0,
+            'service_charge'     => $request->service_charge ?? 0,
             'notes'              => $request->notes,
             'image_path'         => $imagePath,
         ]);
@@ -100,6 +103,9 @@ class UnitController extends Controller
             'floor_number'       => $request->floor_number ?? 0,
             'has_water_meter'    => $request->boolean('has_water_meter'),
             'water_meter_number' => $request->water_meter_number,
+            'water_charge'       => $request->water_charge ?? 0,
+            'garbage_charge'     => $request->garbage_charge ?? 0,
+            'service_charge'     => $request->service_charge ?? 0,
             'notes'              => $request->notes,
         ];
 

@@ -30,11 +30,14 @@
                         </label>
                         <select name="lease_id" id="lease_id"
                                 class="form-select @error('lease_id') is-invalid @enderror"
-                                required onchange="fillRent(this)">
+                                required onchange="fillCharges(this)">
                             <option value="">Select active lease...</option>
                             @foreach($leases as $lease)
                                 <option value="{{ $lease->id }}"
                                         data-rent="{{ $lease->monthly_rent }}"
+                                        data-water="{{ $lease->unit->water_charge ?? 0 }}"
+                                        data-garbage="{{ $lease->unit->garbage_charge ?? 0 }}"
+                                        data-service="{{ $lease->unit->service_charge ?? 0 }}"
                                         {{ old('lease_id') == $lease->id ? 'selected' : '' }}>
                                     {{ $lease->tenant->user->name }} —
                                     {{ $lease->unit->unit_number }},
@@ -155,10 +158,18 @@
 
 @push('scripts')
 <script>
-function fillRent(select) {
-    const option = select.options[select.selectedIndex];
-    const rent = option.getAttribute('data-rent') || 0;
-    document.getElementById('rent_amount').value = rent;
+function fillCharges(select) {
+    const option  = select.options[select.selectedIndex];
+    const rent    = option.getAttribute('data-rent')    || 0;
+    const water   = option.getAttribute('data-water')   || 0;
+    const garbage = option.getAttribute('data-garbage') || 0;
+    const service = option.getAttribute('data-service') || 0;
+
+    document.getElementById('rent_amount').value    = rent;
+    document.getElementById('water_amount').value   = water;
+    document.getElementById('garbage_amount').value = garbage;
+    document.getElementById('other_amount').value   = service;
+
     calcTotal();
 }
 
